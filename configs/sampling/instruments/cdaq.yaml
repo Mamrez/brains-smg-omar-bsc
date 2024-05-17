@@ -7,12 +7,12 @@ average_io_point_difference: True # Averaging mode of the ADC output;
 # Note: For generating a surrogate mode, this option MUST be true,
 # regardless of DAC/ADC sampling rates.
 
-activation_sampling_frequency: 5000 # Digital-to-Analogue Converter module update rate
+activation_sampling_frequency: 25000 # Digital-to-Analogue Converter module update rate
 multiple_devices: False
-readout_sampling_frequency: 10000 # Analogue-to-Digital Converter sampling rate
+readout_sampling_frequency: 1000000 # Analogue-to-Digital Converter sampling rate
 
-trigger_source: cDAQ2
-activation_instrument: cDAQ2Mod2
+trigger_source: cDAQ4
+activation_instrument: cDAQ2Mod1
 
 activation_channels: [6, 0, 7, 5, 2, 4, 3] # Analogue output channels of DAC
 
@@ -39,7 +39,7 @@ activation_voltage_ranges: [
 # Desired sample batch should have a balanced current distribution
 
 activation_channel_mask: [1,1,1,1,1,1,1]
-readout_instrument: cDAQ2Mod8
+readout_instrument: cDAQ2Mod4
 
 readout_channels: [0] # Analogue input channel(s) of ADC
 

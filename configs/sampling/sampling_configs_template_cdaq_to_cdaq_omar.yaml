@@ -1,14 +1,14 @@
-save_directory: test/quick_setup # directory path to save the sampled data
+save_directory: main/mainSamplingData # directory path to save the sampled data
 data_name: Omar_test_measurement1 # Please specify a proper name to your sampling measurement.
 
 driver:
   instrument_type: cdaq_to_cdaq
 
-  inverted_output: True # If the amplifier circuitry is inverting amplifier
+  inverted_output: False # If the amplifier circuitry is inverting amplifier
 
   instruments_setup: !include instruments/cdaq.yaml # possible options cdaq.yaml, nidaq.yaml, multiple_cdaq.yaml
 
-  amplification: [39.17] # Amplification factor of Amplifier;
+  amplification: [1] # Amplification factor of Amplifier;
   # Maximum/Minimum measured current: +158/-158 nA
   # Maximum/Minimum Op Amp. output voltage: +4/-4 V
   # Amplification equation: abs(Maximum measured current)/abs(Maximum Op. Amp output voltage)
@@ -44,8 +44,8 @@ input_data:
 
   base_input_frequency_multiplier: 50 # Base frequency multiplier Hz
   
-  random_phase_shift_each: 1
-  phase: [-1.9869,  0.6518,  5.7237, -1.3900,  4.1251, -1.5166, -5.2384] # Phase shift in the input signals per activation channel.
+  random_phase_shift_each: 0
+  phase: [0,  0,  0, 0,  0, 0, 0] # Phase shift in the input signals per activation channel.
   
   
   # Amplitude and offset are calculated from the voltage_ranges specified in the driver/instrument_setup configs field.
