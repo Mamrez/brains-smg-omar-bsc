@@ -1,0 +1,7 @@
+name: bspysmg
+dependencies:
+   - python=3.6
+   - pip
+   - scipy
+   - pip:
+     - more_itertools
