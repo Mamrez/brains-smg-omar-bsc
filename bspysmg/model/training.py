@@ -410,6 +410,10 @@ def default_train_step(
     for inputs, targets in loop:
         inputs, targets = to_device(inputs), to_device(targets)
         optimizer.zero_grad()
+
+        if hasattr(model, 'initialize_hidden_state'):
+            model.initialize_hidden_state(inputs.size(0))
+
         predictions = model(inputs)
         loss = criterion(predictions, targets)
         loss.backward()
@@ -447,6 +451,10 @@ def default_val_step(model: torch.nn.Module,
         loop = tqdm(dataloader)
         for inputs, targets in loop:
             inputs, targets = to_device(inputs), to_device(targets)
+
+            if hasattr(model, 'initialize_hidden_state'):
+                model.initialize_hidden_state(inputs.size(0))
+
             predictions = model(inputs)
             loss = criterion(predictions, targets)
             val_loss += loss.item() * inputs.shape[0]

@@ -365,6 +365,7 @@ def get_dataloaders(
     info_dict = None
     amplification = None
     dataset_names = ['train', 'validation', 'test']
+
     if len(configs['data']['dataset_paths']) > 1:
         for i in range(len(configs['data']['dataset_paths'])):
             if configs['data']['dataset_paths'][i] is not None:
@@ -393,29 +394,19 @@ def get_dataloaders(
         amplification = TorchUtils.format(
             info_dict["sampling_configs"]["driver"]["amplification"])
 
-        assert sum(
-            configs['data']
-            ['split_percentages']) == 1, "Split percentages should add to one"
-        assert len(configs['data']['split_percentages']) <= 3 and len(
-            configs['data']['split_percentages']
-        ) >= 1, "Split percentage list should only allow from one to three values. For training, validation datasets."
-        if len(configs['data']['split_percentages']) == 1:
-            datasets = [dataset, None]
-        else:
-            train_set_size = math.ceil(
-                configs['data']['split_percentages'][0] * len(dataset))
-            valid_set_size = math.floor(
-                configs['data']['split_percentages'][1] * len(dataset))
+        datasets = split_dataset(dataset, configs['data']['split_percentages'])
 
-            if len(configs['data']['split_percentages']) == 2:
-                datasets = list(
-                    random_split(dataset, [train_set_size, valid_set_size]))
-            else:
-                test_set_size = len(dataset) - train_set_size - valid_set_size
-                datasets = list(
-                    random_split(
-                        dataset,
-                        [train_set_size, valid_set_size, test_set_size]))
+    if configs['model_structure']['type'] == 'LSTM':
+        sequence_length = configs['model_structure']['seq_length']
+        for i, dataset in enumerate(datasets):
+            if dataset is not None:
+                data = []
+                for j in range(len(dataset)):
+                    sample, target = dataset[j]
+                    data.append(np.hstack((sample, target)))
+                data = np.array(data)
+                X, y = prepare_rnn_sequences(data, sequence_length)
+                datasets[i] = [(x, y_) for x, y_ in zip(X, y)]
 
     # Create dataloaders
     dataloaders = []
@@ -434,3 +425,29 @@ def get_dataloaders(
         else:
             dataloaders.append(None)
     return dataloaders, amplification, info_dict
+
+
+def split_dataset(dataset, split_percentages):
+    assert sum(split_percentages) == 1, "Split percentages should add to one"
+    assert len(split_percentages) <= 3 and len(split_percentages) >= 1, "Split percentage list should only allow from one to three values. For training, validation datasets."
+    train_set_size = math.ceil(split_percentages[0] * len(dataset))
+    valid_set_size = math.floor(split_percentages[1] * len(dataset)) if len(split_percentages) > 1 else 0
+    test_set_size = len(dataset) - train_set_size - valid_set_size
+
+    if len(split_percentages) == 1:
+        return [dataset, None, None]
+    elif len(split_percentages) == 2:
+        return list(random_split(dataset, [train_set_size, valid_set_size]))
+    else:
+        return list(random_split(dataset, [train_set_size, valid_set_size, test_set_size]))
+    
+def prepare_rnn_sequences(data, sequence_length):
+    input_sequences, target_values = [], []
+    for start_idx in range(len(data)):
+        end_idx = start_idx + sequence_length
+        if end_idx > len(data):
+            break
+        input_seq, target_value = data[start_idx:end_idx, :-1], data[end_idx-1, -1]
+        input_sequences.append(input_seq)
+        target_values.append(target_value)
+    return np.array(input_sequences), np.array(target_values)
