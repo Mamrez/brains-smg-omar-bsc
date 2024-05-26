@@ -1,0 +1,130 @@
+data_name: omar_test_measurement1
+driver:
+  amplification:
+  - 1
+  auto_start: true
+  instrument_type: cdaq_to_cdaq
+  instruments_setup:
+    activation_channel_mask:
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    activation_channels:
+    - 0
+    - 1
+    - 12
+    - 3
+    - 13
+    - 14
+    - 15
+    activation_instrument: cDAQ4Mod1
+    activation_sampling_frequency: 25000
+    activation_voltage_ranges:
+    - - -0.25
+      - 0.25
+    - - -0.25
+      - 0.25
+    - - -0.25
+      - 0.25
+    - - -0.25
+      - 0.25
+    - - -0.25
+      - 0.25
+    - - -0.25
+      - 0.25
+    - - -0.25
+      - 0.25
+    amplification:
+    - 1
+    average_io_point_difference: true
+    instrument_type: cdaq_to_cdaq
+    inverted_output: false
+    multiple_devices: false
+    readout_channels:
+    - 3
+    readout_instrument: cDAQ4Mod4
+    readout_sampling_frequency: 500000
+    trigger_source: cDAQ4
+  inverted_output: false
+  max_ramping_time_seconds: 0.1
+  offset: 1
+input_data:
+  activation_electrode_no: 7
+  amplitude: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - &id001 !!python/name:numpy.ndarray ''
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 7
+    - &id002 !!python/object/apply:numpy.dtype
+      args:
+      - f8
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      AAAAAAAA0D8AAAAAAADQPwAAAAAAANA/AAAAAAAA0D8AAAAAAADQPwAAAAAAANA/AAAAAAAA0D8=
+  base_input_frequency_multiplier: 50
+  batch_time: 0.5
+  input_distribution: sine
+  input_frequency:
+  - 2
+  - 3
+  - 5
+  - 7
+  - 13
+  - 17
+  - 19
+  number_batches: 1
+  offset: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 7
+    - *id002
+    - false
+    - !!binary |
+      AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+  phase:
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  ramp_time: 0.4
+  random_phase_shift_each: 0
+  readout_electrode_no: 1
+save_directory: main/mainSamplingData\omar_test_measurement1_2024_05_17_164018
+setup_insights:
+  device_comments: One electrode not working properly.
+  device_material: Boron doped silicon
+  gain_info: 50MOhm
+  schematic: "\t   ao1   ao6   ao0\n \t    #     #     #\n \tao3 #           # output\n\
+    \ \t    #     #     #\n \t   ao5   ao2   ao4\n"
+  setup_name: quick

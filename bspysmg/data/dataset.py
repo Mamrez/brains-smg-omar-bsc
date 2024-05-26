@@ -401,7 +401,7 @@ def get_dataloaders(
     
     if info_dict['model_structure']['type'] == 'LSTM':
         sequence_length = info_dict['model_structure']['sequence_length']
-        chunk_size = max(100000, sequence_length)  # Ensure chunk size is at least sequence_length
+        chunk_size = max(configs['data']['batch_size'], sequence_length)  # Ensure chunk size is at least sequence_length
         for i, dataset in enumerate(datasets):
             if dataset is not None:
                 total_samples = len(dataset)

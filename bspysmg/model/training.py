@@ -422,7 +422,7 @@ def default_train_step(
         optimizer.zero_grad()
 
         if hasattr(model, 'initialize_hidden_state'):
-            model.initialize_hidden_state(inputs.size(0))
+            model.initialize_hidden_state(inputs.size(0),inputs.dtype)
 
         predictions = model(inputs)
         loss = criterion(predictions, targets)
@@ -466,7 +466,7 @@ def default_val_step(model: torch.nn.Module,
             targets = targets.view(-1, 1)
 
             if hasattr(model, 'initialize_hidden_state'):
-                model.initialize_hidden_state(inputs.size(0))
+                model.initialize_hidden_state(inputs.size(0),inputs.dtype)
 
             predictions = model(inputs)
             loss = criterion(predictions, targets)
@@ -519,7 +519,7 @@ def postprocess(dataloader: torch.utils.data.DataLoader,
             targets = targets.view(-1, 1)
 
             if isinstance(model, LSTMModel):
-                model.initialize_hidden_state(inputs.size(0))
+                model.initialize_hidden_state(inputs.size(0),inputs.dtype)
 
 
             predictions = model(inputs)
@@ -581,5 +581,5 @@ def to_device(inputs: torch.Tensor) -> torch.Tensor:
         Input tensor allocated to GPU device.
     """
     if inputs.device != TorchUtils.get_device():
-        inputs = inputs.to(device=TorchUtils.get_device())
+        inputs = inputs.to(device=TorchUtils.get_device()).float()
     return inputs

@@ -84,5 +84,5 @@ for file_name in os.listdir('configs/training/Tuning'):
         print(f"Processed: {file_path}")
 """
 
-smg_configs = load_configs('configs/fulltraining/smg_configs_template_omar.yaml')
+smg_configs = load_configs('configs/training/smg_configs_template_omar.yaml')
 generate_surrogate_model(smg_configs, custom_model=LSTMModel)
