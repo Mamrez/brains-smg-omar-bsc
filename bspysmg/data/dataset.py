@@ -399,11 +399,10 @@ def get_dataloaders(
             info_dict["sampling_configs"]["driver"]["amplification"])
         datasets = split_dataset_seq(dataset, configs['data']['split_percentages'])
 
+     # Check if model is of type LSTM and prepare sequences if true
     if info_dict['model_structure']['type'] == 'LSTM':
         sequence_length = info_dict['model_structure']['sequence_length']
-        for i, dataset in enumerate(datasets):
-            if dataset is not None:
-                datasets[i] = RNNPreparedDataset(dataset, sequence_length)
+        datasets = split_dataset_seq(RNNPreparedDataset(configs['data']['dataset_paths'][0],sequence_length=info_dict['model_structure']['sequence_length'] ,steps=configs['data']['steps']),configs['data']['split_percentages'])
 
     # Create dataloaders
     dataloaders = []

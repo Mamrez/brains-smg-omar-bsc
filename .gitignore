@@ -214,3 +214,4 @@ main/mainTrainingData/
 main/mainTrainingData_HyperTuning/
 configs/training/AlreadyTuned
 configs/training/Tuning
+main/mainSamplingData/IO.dat
