@@ -58,7 +58,7 @@ class LSTMModel(nn.Module):
         self.lstm_layer = nn.LSTM(input_size=self.input_features, hidden_size=self.hidden_size, num_layers=self.num_layers, batch_first=True)
         self.output_layer = nn.Linear(self.hidden_size * self.sequence_length, 1)
 
-    def initialize_hidden_state(self, batch_size):
+    def initialize_hidden_state(self, batch_size,device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')):
         """
         Initialize the hidden and cell states for the LSTM.
         
@@ -67,11 +67,11 @@ class LSTMModel(nn.Module):
         batch_size : int
             Size of the batch for which the hidden state is initialized.
         """
-        hidden_state = torch.zeros(self.num_layers, batch_size, self.hidden_size)
-        cell_state = torch.zeros(self.num_layers, batch_size, self.hidden_size)
+        hidden_state = torch.zeros(self.num_layers, batch_size, self.hidden_size,device=device)
+        cell_state = torch.zeros(self.num_layers, batch_size, self.hidden_size,device=device)
         self.hidden = (hidden_state, cell_state)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Forward pass through the LSTM model.
         
@@ -85,6 +85,7 @@ class LSTMModel(nn.Module):
         torch.Tensor
             Output tensor of shape (batch_size, 1).
         """
+        assert type(x) is torch.Tensor, "Input to the forward pass can only be a Pytorch tensor"
         batch_size, seq_len, _ = x.size()
         lstm_out, self.hidden = self.lstm_layer(x, self.hidden)
         lstm_out = lstm_out.contiguous().view(batch_size, -1)
