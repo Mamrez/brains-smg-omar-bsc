@@ -10,7 +10,7 @@ model_structure:  # Surrogate model Neural Network model structure;
   D_out: 1
 
 hyperparameters: # Neural Network Hyperparameters for training phase;
-  epochs: 80 # Number of tries on the total training dataset;
+  epochs: 40 # Number of tries on the total training dataset;
   # Note: The higher the more accurate model on "Training" dataset
   # Note: Should be chosen appropriately to prevent "Overfitting"
   learning_rate: 0.008 # The smaller the learning rate the longer time for the model to be trained
@@ -22,7 +22,7 @@ data:
  
 
   steps: 1
-  batch_size: 32
+  batch_size: 12500
   worker_no: 0
   pin_memory: False
 
