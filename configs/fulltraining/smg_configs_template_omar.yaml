@@ -1,9 +1,9 @@
-results_base_dir: main/mainTrainingData # Path to the directory where output files are saved.
+results_base_dir: main/mainTrainingDataFull # Path to the directory where output files are saved.
 
 model_structure:  # Surrogate model Neural Network model structure;
   type: "LSTM"
   input_features: 7
-  sequence_length: 50
+  sequence_length: 100000
   hidden_size: 32
   num_layers: 1
   D_in: 7
@@ -17,7 +17,7 @@ hyperparameters: # Neural Network Hyperparameters for training phase;
 
 data:
   dataset_paths:
-    ["main/mainSamplingData/postprocessed_data.npz"]
+    ["main/mainSamplingDataFull/postprocessed_data.npz"]
     # Paths to the sampled data, which should be either gathered in training, validation, and testing data or splitted later with split_percentages
  
 

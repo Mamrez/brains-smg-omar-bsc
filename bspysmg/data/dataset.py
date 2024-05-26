@@ -7,7 +7,8 @@ import numpy as np
 from torch.utils.data import Dataset, DataLoader, random_split
 from brainspy.utils.pytorch import TorchUtils
 from typing import Tuple, List
-
+import matplotlib.pyplot as plt
+from torch.utils.data import Subset
 
 class ModelDataset(Dataset):
     def __init__(self, filename: str, steps: int = 1) -> None:
@@ -366,6 +367,7 @@ def get_dataloaders(
     amplification = None
     dataset_names = ['train', 'validation', 'test']
 
+
     if len(configs['data']['dataset_paths']) > 1:
         for i in range(len(configs['data']['dataset_paths'])):
             if configs['data']['dataset_paths'][i] is not None:
@@ -387,30 +389,42 @@ def get_dataloaders(
                 amplification = TorchUtils.format(
                     info_dict["sampling_configs"]["driver"]["amplification"])
                 datasets.append(dataset)
+
     else:
         dataset = ModelDataset(configs['data']['dataset_paths'][0],
                                steps=configs['data']['steps'])
         info_dict = get_info_dict(configs, dataset.sampling_configs)
         amplification = TorchUtils.format(
             info_dict["sampling_configs"]["driver"]["amplification"])
+        datasets = split_dataset_seq(dataset, configs['data']['split_percentages'])
 
-        datasets = split_dataset(dataset, configs['data']['split_percentages'])
-
-    if configs['model_structure']['type'] == 'LSTM':
-        sequence_length = configs['model_structure']['seq_length']
+    if info_dict['model_structure']['type'] == 'LSTM':
+        sequence_length = info_dict['model_structure']['sequence_length']
         for i, dataset in enumerate(datasets):
             if dataset is not None:
                 data = []
                 for j in range(len(dataset)):
                     sample, target = dataset[j]
+                    sample = sample.cpu().numpy() if sample.is_cuda else sample.numpy()
+                    target = target.cpu().numpy() if target.is_cuda else target.numpy()
                     data.append(np.hstack((sample, target)))
                 data = np.array(data)
+                # Extract the 8th element from each array
+                eighth_elements = [arr[7] for arr in data]
+
+                # Plot the 8th elements
+                plt.plot(eighth_elements)
+                plt.title('8th Element of Each Array')
+                plt.xlabel('Array Index')
+                plt.ylabel('8th Element Value')
+                plt.savefig('debug_input.png')
+
                 X, y = prepare_rnn_sequences(data, sequence_length)
                 datasets[i] = [(x, y_) for x, y_ in zip(X, y)]
 
     # Create dataloaders
     dataloaders = []
-    shuffle = [True, False, False]
+    shuffle = [False, False, False]
     for i in range(len(datasets)):
         if datasets[i] is not None and len(datasets[i]) != 0:
             dl = DataLoader(
@@ -440,6 +454,27 @@ def split_dataset(dataset, split_percentages):
         return list(random_split(dataset, [train_set_size, valid_set_size]))
     else:
         return list(random_split(dataset, [train_set_size, valid_set_size, test_set_size]))
+    
+def split_dataset_seq(dataset, split_percentages):
+    assert sum(split_percentages) == 1, "Split percentages should add to one"
+    assert 1 <= len(split_percentages) <= 3, "Split percentage list should only allow from one to three values. For training, validation, and test datasets."
+    
+    total_len = len(dataset)
+    train_set_size = math.ceil(split_percentages[0] * total_len)
+    valid_set_size = math.floor(split_percentages[1] * total_len) if len(split_percentages) > 1 else 0
+    test_set_size = total_len - train_set_size - valid_set_size
+    
+    indices = list(range(total_len))
+    
+    train_indices = indices[:train_set_size]
+    valid_indices = indices[train_set_size:train_set_size + valid_set_size]
+    test_indices = indices[train_set_size + valid_set_size:]
+    
+    train_subset = Subset(dataset, train_indices)
+    valid_subset = Subset(dataset, valid_indices) if valid_set_size > 0 else None
+    test_subset = Subset(dataset, test_indices) if test_set_size > 0 else None
+    
+    return [train_subset, valid_subset, test_subset]
     
 def prepare_rnn_sequences(data, sequence_length):
     input_sequences, target_values = [], []
