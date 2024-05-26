@@ -398,29 +398,48 @@ def get_dataloaders(
             info_dict["sampling_configs"]["driver"]["amplification"])
         datasets = split_dataset_seq(dataset, configs['data']['split_percentages'])
 
+    
     if info_dict['model_structure']['type'] == 'LSTM':
         sequence_length = info_dict['model_structure']['sequence_length']
+        chunk_size = max(100000, sequence_length)  # Ensure chunk size is at least sequence_length
         for i, dataset in enumerate(datasets):
             if dataset is not None:
-                data = []
-                for j in range(len(dataset)):
-                    sample, target = dataset[j]
-                    sample = sample.cpu().numpy() if sample.is_cuda else sample.numpy()
-                    target = target.cpu().numpy() if target.is_cuda else target.numpy()
-                    data.append(np.hstack((sample, target)))
-                data = np.array(data)
-                # Extract the 8th element from each array
-                eighth_elements = [arr[7] for arr in data]
+                total_samples = len(dataset)
+                input_sequences, target_values = [], []
 
-                # Plot the 8th elements
-                plt.plot(eighth_elements)
-                plt.title('8th Element of Each Array')
-                plt.xlabel('Array Index')
-                plt.ylabel('8th Element Value')
-                plt.savefig('debug_input.png')
+                # Initialize buffer to handle sequence spanning across chunks
+                buffer_data = []
 
-                X, y = prepare_rnn_sequences(data, sequence_length)
-                datasets[i] = [(x, y_) for x, y_ in zip(X, y)]
+                for start_idx in range(0, total_samples, chunk_size):
+                    end_idx = min(start_idx + chunk_size, total_samples)
+                    chunk_data = buffer_data  # Start with any leftover data from previous chunk
+
+                    # Collect data for the current chunk
+                    for j in range(start_idx, end_idx):
+                        sample, target = dataset[j]
+                        sample = sample.cpu().numpy() if sample.is_cuda else sample.numpy()
+                        target = target.cpu().numpy() if target.is_cuda else target.numpy()
+                        chunk_data.append(np.hstack((sample, target)))
+
+                    chunk_data = np.array(chunk_data)
+
+                    # Prepare sequences within the current chunk
+                    X, y = prepare_rnn_sequences(chunk_data, sequence_length)
+
+                    input_sequences.extend(X)
+                    target_values.extend(y)
+
+                    # Save the last 'sequence_length' data points to the buffer for the next chunk
+                    buffer_data = chunk_data[-sequence_length + 1:].tolist()
+
+                # Ensure any remaining data in the buffer is processed
+                if len(buffer_data) >= sequence_length:
+                    buffer_data = np.array(buffer_data)
+                    X, y = prepare_rnn_sequences(buffer_data, sequence_length)
+                    input_sequences.extend(X)
+                    target_values.extend(y)
+
+                datasets[i] = [(x, y_) for x, y_ in zip(input_sequences, target_values)]
 
     # Create dataloaders
     dataloaders = []
@@ -478,11 +497,9 @@ def split_dataset_seq(dataset, split_percentages):
     
 def prepare_rnn_sequences(data, sequence_length):
     input_sequences, target_values = [], []
-    for start_idx in range(len(data)):
-        end_idx = start_idx + sequence_length
-        if end_idx > len(data):
-            break
-        input_seq, target_value = data[start_idx:end_idx, :-1], data[end_idx-1, -1]
+    for start_idx in range(len(data) - sequence_length):
+        input_seq = data[start_idx:start_idx + sequence_length, :-1]
+        target_value = data[start_idx + sequence_length - 1, -1]
         input_sequences.append(input_seq)
         target_values.append(target_value)
     return np.array(input_sequences), np.array(target_values)
