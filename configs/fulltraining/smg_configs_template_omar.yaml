@@ -3,7 +3,7 @@ results_base_dir: main/mainTrainingDataFull # Path to the directory where output
 model_structure:  # Surrogate model Neural Network model structure;
   type: "LSTM"
   input_features: 7
-  sequence_length: 1000
+  sequence_length: 50
   hidden_size: 32
   num_layers: 1
   D_in: 7
@@ -22,7 +22,7 @@ data:
  
 
   steps: 1
-  batch_size: 12500
+  batch_size: 32
   worker_no: 0
   pin_memory: False
 

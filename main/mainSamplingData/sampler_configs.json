@@ -93,7 +93,7 @@ input_data:
   - 13
   - 17
   - 19
-  number_batches: 1
+  number_batches: 5
   offset: !!python/object/apply:numpy.core.multiarray._reconstruct
     args:
     - *id001

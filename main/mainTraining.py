@@ -11,8 +11,8 @@ from brainspy.utils.io import load_configs
 from bspysmg.data.postprocess import post_process
 from bspysmg.model.lstm import LSTMModel
 
-#inputs, outputs, info_dictionary = post_process('main\mainSamplingDataFull', clipping_value=None)
-#print(f"max out {outputs.max()} max min {outputs.min()} shape {outputs.shape}")
+inputs, outputs, info_dictionary = post_process('main\mainSamplingData', clipping_value=None)
+print(f"max out {outputs.max()} max min {outputs.min()} shape {outputs.shape}")
       
 """
 # Define the base directory for saving YAML files
