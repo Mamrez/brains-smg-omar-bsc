@@ -4,9 +4,9 @@ File containing functions for training a surrogate model in pytorch taking into 
 import os
 import torch
 import matplotlib.pyplot as plt
-
+from torch.cuda.amp import GradScaler, autocast
 import numpy as np
-
+import gc
 # from brainspy.algorithm_manager import get_algorithm
 # from bspysmg.model.data.inputs.data_handler import get_training_data
 from tqdm import tqdm
@@ -154,6 +154,8 @@ def generate_surrogate_model(
         betas=(0.9, 0.75),
     )
 
+    scaler = GradScaler()
+    
     # Whole training loop
     model, performances, saved_dir = train_loop(
         model,
@@ -164,6 +166,7 @@ def generate_surrogate_model(
         configs["hyperparameters"]["epochs"],
         amplification,
         save_dir=results_dir,
+        scaler=scaler
     )
 
     # Plot results
@@ -216,9 +219,12 @@ def train_loop(
     optimizer: torch.optim.Optimizer,
     epochs: int,
     amplification: float,
+    scaler: GradScaler, 
     start_epoch: int = 0,
     save_dir: str = None,
     early_stopping: bool = True,
+    accumulation_steps: int = 2
+
 ) -> Tuple[torch.nn.Module, List[float]]:
     """
     Performs the training of a model and returns the trained model, training loss
@@ -320,7 +326,7 @@ def train_loop(
     for epoch in range(epochs):
         print("\nEpoch: " + str(epoch))
         model, running_loss = default_train_step(model, dataloaders[0],
-                                                 criterion, optimizer)
+                                                 criterion, optimizer, scaler=scaler)
         running_loss = running_loss**(1 / 2)
         running_loss *= amplification
         train_losses = torch.cat((train_losses, running_loss.unsqueeze(dim=0)),
@@ -329,7 +335,7 @@ def train_loop(
             train_losses[-1].item())
 
         if dataloaders[1] is not None and len(dataloaders[1]) > 0:
-            val_loss = default_val_step(model, dataloaders[1], criterion)
+            val_loss = default_val_step(model, dataloaders[1], criterion,scaler=scaler)
             val_loss = val_loss**(1 / 2)
             val_loss *= amplification
             val_losses = torch.cat((val_losses, val_loss.unsqueeze(dim=0)),
@@ -389,7 +395,7 @@ def train_loop(
 def default_train_step(
         model: torch.nn.Module, dataloader: torch.utils.data.DataLoader,
         criterion: torch.nn.modules.loss._Loss,
-        optimizer: torch.optim.Optimizer) -> Tuple[torch.nn.Module, float]:
+        optimizer: torch.optim.Optimizer, scaler: GradScaler, accumulation_steps: int = 5) -> Tuple[torch.nn.Module, float]:
     """
     Performs the training step of a model within a single epoch and returns the
     current loss and current trained model.
@@ -412,8 +418,9 @@ def default_train_step(
     """
     running_loss = 0
     model.train()
+    optimizer.zero_grad()
     loop = tqdm(dataloader)
-    for inputs, targets in loop:
+    for i, (inputs, targets) in enumerate(loop):
         inputs, targets = to_device(inputs), to_device(targets)
 
         # Ensure the target tensor has the same shape as the input tensor
@@ -424,19 +431,29 @@ def default_train_step(
         if hasattr(model, 'initialize_hidden_state'):
             model.initialize_hidden_state(inputs.size(0),inputs.dtype)
 
-        predictions = model(inputs)
-        loss = criterion(predictions, targets)
-        loss.backward()
-        optimizer.step()
+        with autocast():
+            predictions = model(inputs)
+            loss = criterion(predictions, targets)
+
+        loss = loss / accumulation_steps
+        scaler.scale(loss).backward()
+
+        if (i + 1) % accumulation_steps == 0:
+            scaler.step(optimizer)
+            scaler.update()
+            optimizer.zero_grad()
+
         running_loss += loss.item() * inputs.shape[0]
-        loop.set_postfix(batch_loss=loss.item())
+        clear_memory()
+
     running_loss /= len(dataloader.dataset)
     return model, running_loss
 
 
 def default_val_step(model: torch.nn.Module,
                      dataloader: torch.utils.data.DataLoader,
-                     criterion: torch.nn.modules.loss._Loss) -> float:
+                     criterion: torch.nn.modules.loss._Loss,
+                     scaler: GradScaler) -> float:
     """
     Performs the validation step of a model within a single epoch and returns
     the validation loss.
@@ -468,9 +485,13 @@ def default_val_step(model: torch.nn.Module,
             if hasattr(model, 'initialize_hidden_state'):
                 model.initialize_hidden_state(inputs.size(0),inputs.dtype)
 
-            predictions = model(inputs)
-            loss = criterion(predictions, targets)
+            with autocast():
+                predictions = model(inputs)
+                loss = criterion(predictions, targets)
+
             val_loss += loss.item() * inputs.shape[0]
+            torch.cuda.empty_cache()
+
             loop.set_postfix(batch_loss=loss.item())
         val_loss /= len(dataloader.dataset)
     return val_loss
@@ -583,3 +604,7 @@ def to_device(inputs: torch.Tensor) -> torch.Tensor:
     if inputs.device != TorchUtils.get_device():
         inputs = inputs.to(device=TorchUtils.get_device()).float()
     return inputs
+
+def clear_memory():
+    gc.collect()
+    torch.cuda.empty_cache()
