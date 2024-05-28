@@ -421,17 +421,19 @@ def default_train_step(
     optimizer.zero_grad()
     loop = tqdm(dataloader)
     for i, (inputs, targets) in enumerate(loop):
-        inputs, targets = to_device(inputs), to_device(targets)
+    
 
         # Ensure the target tensor has the same shape as the input tensor
         targets = targets.view(-1, 1)
 
         optimizer.zero_grad()
 
-        if hasattr(model, 'initialize_hidden_state'):
-            model.initialize_hidden_state(inputs.size(0),inputs.dtype)
+        with torch.autocast(device_type='cuda',dtype=torch.float16):
+            inputs, targets = to_device(inputs), to_device(targets)
 
-        with autocast():
+            if hasattr(model, 'initialize_hidden_state'):
+                model.initialize_hidden_state(inputs.size(0),inputs.dtype)  
+
             predictions = model(inputs)
             loss = criterion(predictions, targets)
 
@@ -477,15 +479,16 @@ def default_val_step(model: torch.nn.Module,
         model.eval()
         loop = tqdm(dataloader)
         for inputs, targets in loop:
-            inputs, targets = to_device(inputs), to_device(targets)
 
             # Ensure the target tensor has the same shape as the input tensor
             targets = targets.view(-1, 1)
 
-            if hasattr(model, 'initialize_hidden_state'):
-                model.initialize_hidden_state(inputs.size(0),inputs.dtype)
-
-            with autocast():
+            with torch.autocast(device_type='cuda',dtype=torch.float16):
+                inputs, targets = to_device(inputs), to_device(targets)
+                
+                if hasattr(model, 'initialize_hidden_state'):
+                    model.initialize_hidden_state(inputs.size(0),inputs.dtype)
+                
                 predictions = model(inputs)
                 loss = criterion(predictions, targets)
 
