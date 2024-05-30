@@ -76,7 +76,7 @@ for num_layers in num_layers_range:
 
         print(f"Created: {file_path}")
 """
-
+"""
 for file_name in os.listdir('configs/training/Tuning'):
     if file_name.endswith('.yaml'):
         file_path = os.path.join('configs/training/Tuning', file_name)
@@ -85,6 +85,7 @@ for file_name in os.listdir('configs/training/Tuning'):
         generate_surrogate_model(smg_configs, custom_model=LSTMModel,main_folder= os.path.splitext(file_name)[0])
 
         print(f"Processed: {file_path}")
+"""
 
 smg_configs = load_configs('configs/training/smg_configs_template_omar.yaml')
 generate_surrogate_model(smg_configs, custom_model=LSTMModel)
