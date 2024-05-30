@@ -174,7 +174,7 @@ def generate_surrogate_model(
     labels = ["TRAINING", "VALIDATION", "TEST"]
     for i in range(len(dataloaders)):
         if dataloaders[i] is not None:
-            io_file_path = 'main\mainSamplingData\IO.dat'
+            io_file_path = 'main/mainSamplingData/IO.dat'
             loss = postprocess(
                 dataloaders[i],
                 model,
