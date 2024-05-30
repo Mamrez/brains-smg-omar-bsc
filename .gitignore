@@ -217,3 +217,5 @@ configs/training/Tuning
 main/mainSamplingData/IO.dat
 main/mainSamplingDataFull/IO.dat
 main/statistical_analyiss
+IO_1Mio.dat
+IO_500k.dat

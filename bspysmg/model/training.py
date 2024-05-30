@@ -223,7 +223,7 @@ def train_loop(
     start_epoch: int = 0,
     save_dir: str = None,
     early_stopping: bool = True,
-    accumulation_steps: int = 2
+    accumulation_steps: int = 1
 
 ) -> Tuple[torch.nn.Module, List[float]]:
     """

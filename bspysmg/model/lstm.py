@@ -22,6 +22,10 @@ class LSTMModel(nn.Module):
             
             4. num_layers : int
             Number of LSTM layers.
+
+            5. output_size : int
+
+            Number of Outputs for the linear layer
         """
         super(LSTMModel, self).__init__()
         self.build_model_structure(model_structure)
@@ -54,9 +58,10 @@ class LSTMModel(nn.Module):
         self.sequence_length = model_structure["sequence_length"]
         self.hidden_size = model_structure["hidden_size"]
         self.num_layers = model_structure["num_layers"]
+        self.output_size = model_structure["output_size"]
 
         self.lstm_layer = nn.LSTM(input_size=self.input_features, hidden_size=self.hidden_size, num_layers=self.num_layers, batch_first=True)
-        self.output_layer = nn.Linear(self.hidden_size * self.sequence_length, 1)
+        self.output_layer = nn.Linear(self.hidden_size, self.output_size)
 
     def initialize_hidden_state(self, batch_size, dtype, device=torch.device("cuda" if torch.cuda.is_available() else "cpu")):
         """
@@ -108,6 +113,7 @@ class LSTMModel(nn.Module):
         default_sequence_length = 10
         default_hidden_size = 20
         default_num_layers = 1
+        default_output_size = 1
 
         if "input_features" not in model_structure:
             model_structure["input_features"] = default_input_features
@@ -144,3 +150,12 @@ class LSTMModel(nn.Module):
         else:
             num_layers = model_structure.get('num_layers')
             assert isinstance(num_layers, int) and num_layers > 0, "num_layers must be a positive integer"
+
+        if "output_size" not in model_structure:
+            model_structure["output_size"] = default_output_size
+            warnings.warn(
+                "The model loaded does not define the number of outputs as expected. Changed it to default value: {}.".format(default_output_size)
+            )
+        else:
+            output_size = model_structure.get('output_size')
+            assert isinstance(output_size, int) and output_size > 0, "num_layers must be a positive integer"

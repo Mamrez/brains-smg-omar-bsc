@@ -24,20 +24,20 @@ driver:
     activation_instrument: cDAQ4Mod1
     activation_sampling_frequency: 25000
     activation_voltage_ranges:
+    - - -0.75
+      - 0.75
+    - - -0.75
+      - 0.75
+    - - -0.75
+      - 0.75
+    - - -0.75
+      - 0.75
     - - -0.25
       - 0.25
     - - -0.25
       - 0.25
-    - - -0.25
-      - 0.25
-    - - -0.25
-      - 0.25
-    - - -0.25
-      - 0.25
-    - - -0.25
-      - 0.25
-    - - -0.25
-      - 0.25
+    - - -0.75
+      - 0.75
     amplification:
     - 1
     average_io_point_difference: true
@@ -93,7 +93,7 @@ input_data:
   - 13
   - 17
   - 19
-  number_batches: 5
+  number_batches: 10
   offset: !!python/object/apply:numpy.core.multiarray._reconstruct
     args:
     - *id001
