@@ -77,18 +77,18 @@ from bspysmg.model.lstm import LSTMModel
 #         with open(file_path, 'x') as yaml_file:
 #             yaml.dump(config, yaml_file)
 
-#         print(f"Created: {file_path}")
+        print(f"Created: {file_path}")
+"""
+"""
+for file_name in os.listdir('configs/training/Tuning'):
+    if file_name.endswith('.yaml'):
+        file_path = os.path.join('configs/training/Tuning', file_name)
+        smg_configs = load_configs(file_path)
+        print(file_path)
+        generate_surrogate_model(smg_configs, custom_model=LSTMModel,main_folder= os.path.splitext(file_name)[0])
 
-
-
-# for file_name in os.listdir('configs/training/Tuning'):
-#     if file_name.endswith('.yaml'):
-#         file_path = os.path.join('configs/training/Tuning', file_name)
-#         smg_configs = load_configs(file_path)
-#         print(file_path)
-#         generate_surrogate_model(smg_configs, custom_model=LSTMModel,main_folder= os.path.splitext(file_name)[0])
-
-#         print(f"Processed: {file_path}")
+        print(f"Processed: {file_path}")
+"""
 
 smg_configs = load_configs('configs/training/smg_configs_template_omar.yaml')
 generate_surrogate_model(smg_configs, custom_model=LSTMModel)
