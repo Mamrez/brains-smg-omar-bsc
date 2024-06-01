@@ -483,7 +483,7 @@ def default_val_step(model: torch.nn.Module,
             targets = targets.view(-1, 1)
 
             if hasattr(model, 'initialize_hidden_state'):
-                model.initialize_hidden_state(inputs.size(0),inputs.dtype)
+                model.initialize_hidden_state(inputs.size(0),dtype=inputs.dtype)
 
             with autocast():
                 predictions = model(inputs)

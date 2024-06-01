@@ -1,7 +1,7 @@
 results_base_dir: main/mainTrainingData # Path to the directory where output files are saved.
 
 model_structure:  # Surrogate model Neural Network model structure;
-  type: "LSTM"
+  type: "RNN"
   input_features: 7
   sequence_length: 100
   hidden_size: 128

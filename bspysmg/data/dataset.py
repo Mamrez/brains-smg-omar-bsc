@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from torch.utils.data import Subset
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"]="6"
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 class ModelDataset(Dataset):
     def __init__(self, filename: str, steps: int = 1) -> None:
         """
@@ -403,7 +403,7 @@ def get_dataloaders(
         datasets = split_dataset_seq(dataset, configs['data']['split_percentages'])
 
     
-    if info_dict['model_structure']['type'] == 'LSTM':
+    if info_dict['model_structure']['type'] == 'RNN':
         sequence_length = info_dict['model_structure']['sequence_length']
         chunk_size = max(configs['data']['batch_size'], sequence_length)  # Ensure chunk size is at least sequence_length
 
