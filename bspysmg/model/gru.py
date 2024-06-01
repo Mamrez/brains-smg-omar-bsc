@@ -4,48 +4,10 @@ import warnings
 
 class GRUModel(nn.Module):
     def __init__(self, model_structure: dict):
-        """
-        Initialize the GRU model using the model_structure dictionary.
-        
-        Parameters
-        ----------
-        model_structure : dict
-            Dictionary containing the model structure.
-            1. input_features : int
-            Number of input features.
-            
-            2. sequence_length : int
-            Length of the input sequences.
-            
-            3. hidden_size : int
-            Number of hidden units in the GRU.
-            
-            4. num_layers : int
-            Number of GRU layers.
-        """
         super(GRUModel, self).__init__()
         self.build_model_structure(model_structure)
 
     def build_model_structure(self, model_structure: dict):
-        """
-        Build the model from the structure dictionary and set up the layers.
-        
-        Parameters
-        ----------
-        model_structure : dict
-            Dictionary containing the model structure with the following keys:
-            1. input_features : int
-            Number of input features.
-            
-            2. sequence_length : int
-            Length of the input sequences.
-            
-            3. hidden_size : int
-            Number of hidden units in the GRU.
-            
-            4. num_layers : int
-            Number of GRU layers.
-        """
         if model_structure is None:
             model_structure = {}
         self.structure_consistency_check(model_structure)
@@ -56,36 +18,12 @@ class GRUModel(nn.Module):
         self.num_layers = model_structure["num_layers"]
 
         self.gru_layer = nn.GRU(input_size=self.input_features, hidden_size=self.hidden_size, num_layers=self.num_layers, batch_first=True)
-
         self.output_layer = nn.Linear(self.hidden_size * self.sequence_length, 1)
-        
-        # self.relu = nn.ReLU()
 
-    def initialize_hidden_state(self, batch_size, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')):
-        """
-        Initialize the hidden state for the GRU.
-        
-        Parameters
-        ----------
-        batch_size : int
-            Size of the batch for which the hidden state is initialized.
-        """
-        self.hidden = torch.zeros(self.num_layers, batch_size, self.hidden_size, device=device)
+    def initialize_hidden_state(self, batch_size, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu'), dtype=torch.float32):
+        self.hidden = torch.zeros(self.num_layers, batch_size, self.hidden_size, device=device, dtype=dtype)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Forward pass through the GRU model.
-        
-        Parameters
-        ----------
-        x : torch.Tensor
-            Input tensor of shape (batch_size, sequence_length, input_features).
-        
-        Returns
-        -------
-        torch.Tensor
-            Output tensor of shape (batch_size, 1).
-        """
         assert isinstance(x, torch.Tensor), "Input to the forward pass can only be a Pytorch tensor"
         batch_size, seq_len, _ = x.size()
         gru_out, self.hidden = self.gru_layer(x, self.hidden)
@@ -93,19 +31,6 @@ class GRUModel(nn.Module):
         return self.output_layer(gru_out)
 
     def structure_consistency_check(self, model_structure: dict):
-        """
-        Check if the model structure follows the expected standards and set defaults if not.
-        
-        Parameters
-        ----------
-        model_structure : dict
-            Dictionary of the model structure.
-        
-        Raises
-        ------
-        UserWarning
-            If a parameter is not in the expected format.
-        """
         default_input_features = 1
         default_sequence_length = 10
         default_hidden_size = 20
@@ -146,5 +71,3 @@ class GRUModel(nn.Module):
         else:
             num_layers = model_structure.get('num_layers')
             assert isinstance(num_layers, int) and num_layers > 0, "num_layers must be a positive integer"
-
-

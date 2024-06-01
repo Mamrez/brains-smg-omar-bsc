@@ -429,7 +429,7 @@ def default_train_step(
         optimizer.zero_grad()
 
         if hasattr(model, 'initialize_hidden_state'):
-            model.initialize_hidden_state(inputs.size(0),inputs.dtype)
+            model.initialize_hidden_state(inputs.size(0),dtype=inputs.dtype)
 
         with autocast():
             predictions = model(inputs)
