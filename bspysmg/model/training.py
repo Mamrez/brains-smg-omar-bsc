@@ -18,11 +18,12 @@ from brainspy.utils.pytorch import TorchUtils
 from brainspy.utils.io import create_directory_timestamp
 from brainspy.processors.simulation.model import NeuralNetworkModel
 from bspysmg.data.dataset import get_dataloaders
+from bspysmg.model.transformer import TransformerModel
 from bspysmg.utils.plots import plot_error_vs_output, plot_error_hist, plot_wave_prediction
 from bspysmg.model.lstm import LSTMModel
 from bspysmg.model.gru import GRUModel
 from typing import Tuple, List
-
+import xgboost as xgb
 
 def init_seed(configs: dict) -> None:
     """
@@ -49,126 +50,216 @@ def init_seed(configs: dict) -> None:
     configs["seed"] = seed
 
 
+# def generate_surrogate_model(
+#         configs: dict,
+#         custom_model: torch.nn.Module = NeuralNetworkModel,
+#         criterion: torch.nn.modules.loss._Loss = MSELoss(),
+#         custom_optimizer: torch.optim.Optimizer = Adam,
+#         main_folder: str = "training_data") -> None:
+#     """
+#     It loads the training and validation datasets from the npz file specified
+#     in the field data/dataset_paths of the configs dictionary. These npz files
+#     can be created when running the postprocessing of the sampling data. The
+#     method will train a neural network with the structure specified in the
+#     model_structure field of the configs using the loaded training and validation
+#     datasets. It provides, on the specified saving directory, a trained model,
+#     the plots of the training performance, and the error of the model.
+
+#     Note that the method will only save a model (in each epoch) if current validation
+#     loss is less than the validation loss from the previous epoch.
+
+#     Parameters
+#     ----------
+#     configs : dict
+#         Training configurations for training a model with following keys:
+        
+#         1. results_base_dir: str
+#         Directory where the trained model and corresponding performance plots will be stored.
+
+#         2. seed: int
+#         Sets the seed for generating random numbers to a non-deterministic random number.
+
+#         3. hyperparameters:
+#         epochs: int
+#         learning_rate: float
+        
+#         4. model_structure: dict
+#         The definition of the internal structure of the surrogate model, which is typically five
+#         fully-connected layers of 90 nodes each.
+
+#         4.1 hidden_sizes : list
+#         A list containing the number of nodes of each layer of the surrogate model.
+#         E.g., [90,90,90,90,90]
+
+#         4.2 D_in: int
+#         Number of input features of the surrogate model structure. It should correspond to
+#         the activation electrode number.
+
+#         4.3 D_out: int
+#         Number of output features of the surrogate model structure. It should correspond to
+#         the readout electrode number.
+
+#         5. data:
+#         5.1 dataset_paths: list[str]
+#         A list of paths to the Training, Validation and Test datasets, stored as
+#         postprocessed_data.npz
+
+#         5.2 steps : int
+#         It allows to skip parts of the data when loading it into memory. The number indicates
+#         how many items will be skipped in between. By default, step number is one (no values
+#         are skipped). E.g., if steps = 2, and the inputs are [0, 1, 2, 3, 4, 5, 6]. The only
+#         inputs taken into account would be: [0, 2, 4, 6].
+
+#         5.3 batch_size: int
+#         How many samples will contain each forward pass.
+
+#         5.4 worker_no: int
+#         How many subprocesses to use for data loading. 0 means that the data will be loaded in
+#         the main process. (default: 0)
+
+#         5.5 pin_memory: boolean
+#         If True, the data loader will copy Tensors into CUDA pinned memory before returning
+#         them. If your data elements are a custom type, or your collate_fn returns a batch that
+#         is a custom type.
+#         custom_model : custom model of type torch.nn.Module
+#             Model to be trained.
+#         criterion : <method>
+#             Loss function that will be used to train the model.
+#         custom_optimizer : torch.optim.Optimizer
+#             Optimization method used to train the model which decreases model's loss.
+#         save_dir : string [Optional]
+#             Name of the path where the trained model is to be saved.
+    
+#     Return
+#     ------
+#     saved_dir: str 
+#         Directory where the surrogate model was saved.
+#     """
+#     # Initialise seed and create data directories
+#     init_seed(configs)
+#     results_dir = create_directory_timestamp(configs["results_base_dir"],
+#                                              main_folder)
+
+#     # Get training, validation and test data
+#     # Get amplification of the device and the info
+#     dataloaders, amplification, info_dict = get_dataloaders(configs)
+
+#     # Initilialise model
+#     model = custom_model(info_dict["model_structure"])
+#     # model.set_info_dict(info_dict)
+#     model = TorchUtils.format(model)
+
+#     # Initialise optimiser
+#     optimizer = custom_optimizer(
+#         filter(lambda p: p.requires_grad, model.parameters()),
+#         lr=configs["hyperparameters"]["learning_rate"],
+#         betas=(0.9, 0.75),
+#     )
+
+#     scaler = GradScaler()
+    
+#     # Whole training loop
+#     model, performances, saved_dir = train_loop(
+#         model,
+#         info_dict,
+#         (dataloaders[0], dataloaders[1]),
+#         criterion,
+#         optimizer,
+#         configs["hyperparameters"]["epochs"],
+#         amplification,
+#         save_dir=results_dir,
+#         scaler=scaler
+#     )
+
+#     # Plot results
+#     start_index = 0
+#     labels = ["TRAINING", "VALIDATION", "TEST"]
+#     for i in range(len(dataloaders)):
+#         if dataloaders[i] is not None:
+#             io_file_path = 'main/mainSamplingData/IO.dat'
+#             loss = postprocess(
+#                 dataloaders[i],
+#                 model,
+#                 criterion,
+#                 amplification,
+#                 results_dir,
+#                 label=labels[i], 
+#                 io_file_path=io_file_path,
+#                 start_index=start_index
+#             )
+#             start_index += len(dataloaders[i])
+
+#     plt.figure()
+#     plt.plot(TorchUtils.to_numpy(performances[0]))
+#     if len(performances) > 1 and not len(performances[1]) == 0:
+#         plt.plot(TorchUtils.to_numpy(performances[1]))
+#     if dataloaders[-1].tag == 'test':
+#         plt.plot(np.ones(len(performances[-1])) * TorchUtils.to_numpy(loss))
+#         plt.title("Training profile /n Test loss : %.6f (nA)" % loss)
+#     else:
+#         plt.title("Training profile")
+#     if not len(performances[1]) == 0:
+#         plt.legend(["training", "validation"])
+#     plt.xlabel("Epoch no.")
+#     plt.ylabel("RMSE (nA)")
+#     plt.savefig(os.path.join(results_dir, "training_profile"))
+#     if not dataloaders[-1].tag == 'train':
+#         training_data = torch.load(
+#             os.path.join(results_dir, "training_data.pt"))
+#         training_data['test_loss'] = loss
+#         torch.save(training_data, os.path.join(results_dir,
+#                                                "training_data.pt"))
+#     # print("Model saved in :" + results_dir)
+#     return saved_dir
+
+
 def generate_surrogate_model(
         configs: dict,
-        custom_model: torch.nn.Module = NeuralNetworkModel,
+        custom_model=None,
         criterion: torch.nn.modules.loss._Loss = MSELoss(),
         custom_optimizer: torch.optim.Optimizer = Adam,
         main_folder: str = "training_data") -> None:
-    """
-    It loads the training and validation datasets from the npz file specified
-    in the field data/dataset_paths of the configs dictionary. These npz files
-    can be created when running the postprocessing of the sampling data. The
-    method will train a neural network with the structure specified in the
-    model_structure field of the configs using the loaded training and validation
-    datasets. It provides, on the specified saving directory, a trained model,
-    the plots of the training performance, and the error of the model.
 
-    Note that the method will only save a model (in each epoch) if current validation
-    loss is less than the validation loss from the previous epoch.
-
-    Parameters
-    ----------
-    configs : dict
-        Training configurations for training a model with following keys:
-        
-        1. results_base_dir: str
-        Directory where the trained model and corresponding performance plots will be stored.
-
-        2. seed: int
-        Sets the seed for generating random numbers to a non-deterministic random number.
-
-        3. hyperparameters:
-        epochs: int
-        learning_rate: float
-        
-        4. model_structure: dict
-        The definition of the internal structure of the surrogate model, which is typically five
-        fully-connected layers of 90 nodes each.
-
-        4.1 hidden_sizes : list
-        A list containing the number of nodes of each layer of the surrogate model.
-        E.g., [90,90,90,90,90]
-
-        4.2 D_in: int
-        Number of input features of the surrogate model structure. It should correspond to
-        the activation electrode number.
-
-        4.3 D_out: int
-        Number of output features of the surrogate model structure. It should correspond to
-        the readout electrode number.
-
-        5. data:
-        5.1 dataset_paths: list[str]
-        A list of paths to the Training, Validation and Test datasets, stored as
-        postprocessed_data.npz
-
-        5.2 steps : int
-        It allows to skip parts of the data when loading it into memory. The number indicates
-        how many items will be skipped in between. By default, step number is one (no values
-        are skipped). E.g., if steps = 2, and the inputs are [0, 1, 2, 3, 4, 5, 6]. The only
-        inputs taken into account would be: [0, 2, 4, 6].
-
-        5.3 batch_size: int
-        How many samples will contain each forward pass.
-
-        5.4 worker_no: int
-        How many subprocesses to use for data loading. 0 means that the data will be loaded in
-        the main process. (default: 0)
-
-        5.5 pin_memory: boolean
-        If True, the data loader will copy Tensors into CUDA pinned memory before returning
-        them. If your data elements are a custom type, or your collate_fn returns a batch that
-        is a custom type.
-        custom_model : custom model of type torch.nn.Module
-            Model to be trained.
-        criterion : <method>
-            Loss function that will be used to train the model.
-        custom_optimizer : torch.optim.Optimizer
-            Optimization method used to train the model which decreases model's loss.
-        save_dir : string [Optional]
-            Name of the path where the trained model is to be saved.
-    
-    Return
-    ------
-    saved_dir: str 
-        Directory where the surrogate model was saved.
-    """
-    # Initialise seed and create data directories
     init_seed(configs)
-    results_dir = create_directory_timestamp(configs["results_base_dir"],
-                                             main_folder)
+    results_dir = create_directory_timestamp(configs["results_base_dir"], main_folder)
 
-    # Get training, validation and test data
-    # Get amplification of the device and the info
     dataloaders, amplification, info_dict = get_dataloaders(configs)
 
-    # Initilialise model
-    model = custom_model(info_dict["model_structure"])
-    # model.set_info_dict(info_dict)
-    model = TorchUtils.format(model)
+    if custom_model is None:
+        raise ValueError("custom_model must be provided and cannot be None")
 
-    # Initialise optimiser
-    optimizer = custom_optimizer(
-        filter(lambda p: p.requires_grad, model.parameters()),
-        lr=configs["hyperparameters"]["learning_rate"],
-        betas=(0.9, 0.75),
-    )
+    if isinstance(custom_model, type) and issubclass(custom_model, torch.nn.Module):
+        model = custom_model(info_dict["model_structure"])
+        model = TorchUtils.format(model)
 
-    scaler = GradScaler()
-    
-    # Whole training loop
-    model, performances, saved_dir = train_loop(
-        model,
-        info_dict,
-        (dataloaders[0], dataloaders[1]),
-        criterion,
-        optimizer,
-        configs["hyperparameters"]["epochs"],
-        amplification,
-        save_dir=results_dir,
-        scaler=scaler
-    )
+        optimizer = custom_optimizer(
+            filter(lambda p: p.requires_grad, model.parameters()),
+            lr=configs["hyperparameters"]["learning_rate"],
+            betas=(0.9, 0.75),
+        )
+
+        scaler = GradScaler()
+
+        model, performances, saved_dir = train_loop(
+            model,
+            info_dict,
+            (dataloaders[0], dataloaders[1]),
+            criterion,
+            optimizer,
+            configs["hyperparameters"]["epochs"],
+            amplification,
+            save_dir=results_dir,
+            scaler=scaler
+        )
+    else:
+        model = custom_model(info_dict["model_structure"])
+        model, performances, saved_dir = train_loop_xgboost(
+            model,
+            info_dict,
+            (dataloaders[0], dataloaders[1]),
+            amplification,
+            save_dir=results_dir
+        )
 
     # Plot results
     start_index = 0
@@ -206,10 +297,9 @@ def generate_surrogate_model(
         training_data = torch.load(
             os.path.join(results_dir, "training_data.pt"))
         training_data['test_loss'] = loss
-        torch.save(training_data, os.path.join(results_dir,
-                                               "training_data.pt"))
-    # print("Model saved in :" + results_dir)
+        torch.save(training_data, os.path.join(results_dir, "training_data.pt"))
     return saved_dir
+
 
 
 def train_loop(
@@ -393,6 +483,66 @@ def train_loop(
     return model, [train_losses, val_losses], save_dir
 
 
+import xgboost as xgb
+import numpy as np
+from typing import List, Tuple
+import os
+from tqdm import tqdm
+
+def train_loop_xgboost(
+    model,
+    info_dict: dict,
+    dataloaders: List[torch.utils.data.DataLoader],
+    amplification: float,
+    save_dir: str = None
+) -> Tuple[xgb.XGBRegressor, List[float]]:
+    train_losses, val_losses = [], []
+    
+    # Prepare the training data
+    X_train, y_train = [], []
+    for inputs, targets in dataloaders[0]:
+        inputs = inputs.view(inputs.size(0), -1).numpy()  # Flattening the sequences into 2D
+        targets = targets.numpy()
+        X_train.append(inputs)
+        y_train.append(targets)
+
+    X_train = np.vstack(X_train)
+    y_train = np.hstack(y_train).reshape(-1)
+
+    # Fit the model on the training data
+    model.fit(X_train, y_train)
+
+    # Calculate the training loss
+    train_predictions = model.predict(X_train)
+    train_loss = np.sqrt(np.mean((train_predictions - y_train) ** 2)) * amplification
+    train_losses.append(train_loss)
+    print("Training loss (RMSE): {:.6f} (nA)".format(train_losses[-1].item()))
+
+    # Prepare the validation data
+    if dataloaders[1] is not None and len(dataloaders[1]) > 0:
+        X_val, y_val = [], []
+        for inputs, targets in dataloaders[1]:
+            inputs = inputs.view(inputs.size(0), -1).numpy()  # Flattening the sequences into 2D
+            targets = targets.numpy()
+            X_val.append(inputs)
+            y_val.append(targets)
+
+        X_val = np.vstack(X_val)
+        y_val = np.hstack(y_val).reshape(-1)
+
+        # Calculate the validation loss
+        val_predictions = model.predict(X_val)
+        val_loss = np.sqrt(np.mean((val_predictions - y_val) ** 2)) * amplification
+        val_losses.append(val_loss)
+        print("Validation loss (RMSE): {:.6f} (nA)".format(val_losses[-1].item()))
+
+        # Save the model if a save directory is provided
+        if save_dir is not None:
+            model.model.save_model(os.path.join(save_dir, "model.xgb"))
+            print("Model saved in: " + save_dir)
+
+    return model, [train_losses, val_losses], save_dir
+
 def default_train_step(
         model: torch.nn.Module, dataloader: torch.utils.data.DataLoader,
         criterion: torch.nn.modules.loss._Loss,
@@ -432,12 +582,26 @@ def default_train_step(
         if hasattr(model, 'initialize_hidden_state'):
             model.initialize_hidden_state(inputs.size(0),dtype=inputs.dtype)
 
+        # with autocast():
+        #     predictions = model(inputs)
+        #     loss = criterion(predictions, targets)
+
         with autocast():
             predictions = model(inputs)
+            if torch.isnan(predictions).any():
+                print("Predictions contain nan values!")
+                print(predictions)
             loss = criterion(predictions, targets)
+            if torch.isnan(loss).any():
+                print("Loss contains nan values!")
+                print(loss)
 
         loss = loss / accumulation_steps
         scaler.scale(loss).backward()
+
+        # Gradient clipping
+        if isinstance(model, TransformerModel):
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
 
         if (i + 1) % accumulation_steps == 0:
             scaler.step(optimizer)
@@ -584,6 +748,111 @@ def postprocess(dataloader: torch.utils.data.DataLoader,
         plot_wave_prediction(io_file_path, all_predictions, data_type=label, save_directory=results_dir,start_index=start_index, all_targets=all_targets)
 
     return torch.sqrt(running_loss)
+
+# import numpy as np
+# from tqdm import tqdm
+# from sklearn.metrics import mean_squared_error
+# import torch
+
+# import numpy as np
+# from tqdm import tqdm
+# from sklearn.metrics import mean_squared_error
+# import torch
+
+# def postprocess(
+#     dataloader: torch.utils.data.DataLoader,
+#     model,
+#     criterion: torch.nn.modules.loss._Loss,
+#     amplification: float,
+#     results_dir: str,
+#     label: str,
+#     io_file_path: str = None,
+#     start_index: int = 0
+# ) -> float:
+#     """
+#     Plots error vs output and error histogram for given dataset and saves it to
+#     specified directory.
+
+#     Parameters
+#     ----------
+#     dataloader :  torch.utils.data.DataLoader
+#         A PyTorch Dataloader containing the training dataset.
+#     model : XGBoostModel
+#         Model to be trained.
+#     criterion : <method>
+#         Loss function that will be used to train the model.
+#     amplification: float
+#         Amplification correction factor used in the device to correct the amplification
+#         applied to the output current in order to convert it into voltage before its
+#         readout.
+#     results_dir : string
+#         Name of the path and file where the plots are to be saved.
+#     label : string
+#         Name of the dataset. I.e., train, validation or test.
+
+#     Returns
+#     -------
+#     float
+#         Mean Squared error evaluated on given dataset.
+#     """
+#     print(f"Postprocessing {label} data ... ")
+#     running_loss = 0
+#     all_targets = []
+#     all_predictions = []
+
+#     # Collect all targets and predictions
+#     for inputs, targets in tqdm(dataloader):
+#         inputs = inputs.view(inputs.size(0), -1).cpu().numpy()  # Flattening the sequences into 2D and move to CPU
+#         if targets.is_cuda:
+#             targets = targets.cpu().numpy()  # Move targets to CPU if they are on GPU
+#         else:
+#             targets = targets.numpy()
+
+#         predictions = model.predict(inputs)
+#         all_targets.append(amplification * targets)
+#         all_predictions.append(amplification * predictions)
+#         loss = mean_squared_error(targets, predictions)
+#         running_loss += loss * inputs.shape[0]  # sum up batch loss
+
+#     if not all_targets:
+#         raise RuntimeError("No targets found in dataloader.")
+
+#     if not all_predictions:
+#         raise RuntimeError("No predictions made by the model.")
+
+#     running_loss /= len(dataloader.dataset)
+#     running_loss = running_loss * (amplification**2)
+
+#     print(label.capitalize() +
+#           " loss (MSE): {:.6f} (nA)".format(running_loss))
+#     print(label.capitalize() +
+#           " loss (RMSE): {:.6f} (nA)\n".format(np.sqrt(running_loss)))
+
+#     all_targets = np.concatenate(all_targets, axis=0)
+#     all_predictions = np.concatenate(all_predictions, axis=0)
+    
+#     error = all_targets - all_predictions
+    
+#     plot_error_vs_output(
+#         all_targets,
+#         error,
+#         results_dir,
+#         name=label + "_error_vs_output",
+#     )
+#     plot_error_hist(
+#         all_targets,
+#         all_predictions,
+#         error,
+#         running_loss,
+#         results_dir,
+#         name=label + "_error",
+#     )
+
+#     if io_file_path:
+#         plot_wave_prediction(io_file_path, all_predictions, data_type=label, save_directory=results_dir, start_index=start_index, all_targets=all_targets)
+
+#     return np.sqrt(running_loss)
+
 
 
 def to_device(inputs: torch.Tensor) -> torch.Tensor:
