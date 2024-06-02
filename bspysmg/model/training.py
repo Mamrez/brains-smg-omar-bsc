@@ -20,6 +20,7 @@ from brainspy.processors.simulation.model import NeuralNetworkModel
 from bspysmg.data.dataset import get_dataloaders
 from bspysmg.utils.plots import plot_error_vs_output, plot_error_hist, plot_wave_prediction
 from bspysmg.model.lstm import LSTMModel
+from bspysmg.model.gru import GRUModel
 from typing import Tuple, List
 
 
@@ -539,7 +540,7 @@ def postprocess(dataloader: torch.utils.data.DataLoader,
             # Ensure the target tensor has the same shape as the input tensor
             targets = targets.view(-1, 1)
 
-            if isinstance(model, LSTMModel):
+            if isinstance(model, LSTMModel) or isinstance(model,GRUModel):
                 model.initialize_hidden_state(inputs.size(0),inputs.dtype)
 
 
