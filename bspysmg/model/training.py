@@ -18,6 +18,7 @@ from brainspy.utils.pytorch import TorchUtils
 from brainspy.utils.io import create_directory_timestamp
 from brainspy.processors.simulation.model import NeuralNetworkModel
 from bspysmg.data.dataset import get_dataloaders
+from bspysmg.model.early_stopping import EarlyStopping
 from bspysmg.model.transformer import TransformerModel
 from bspysmg.utils.plots import plot_error_vs_output, plot_error_hist, plot_wave_prediction
 from bspysmg.model.lstm import LSTMModel
@@ -314,6 +315,7 @@ def train_loop(
     start_epoch: int = 0,
     save_dir: str = None,
     early_stopping: bool = True,
+    patience: int = 5,
     accumulation_steps: int = 1
 
 ) -> Tuple[torch.nn.Module, List[float]]:
@@ -413,6 +415,9 @@ def train_loop(
 
     train_losses, val_losses = TorchUtils.format([]), TorchUtils.format([])
     min_val_loss = np.inf
+    early_stopper = EarlyStopping(patience=patience, verbose=True, path=os.path.join(save_dir, 'checkpoint.pt'))
+
+
 
     for epoch in range(epochs):
         print("\nEpoch: " + str(epoch))
@@ -433,6 +438,12 @@ def train_loop(
                                    dim=0)
             description += "Validation loss (RMSE): {:.6f} (nA)\n".format(
                 val_losses[-1].item())
+            
+            early_stopper(val_loss.item(), model)
+
+            if early_stopper.early_stop:
+                print('Early stopping')
+                break
             # Save only when peak val performance is reached
             if (save_dir is not None and early_stopping
                     and val_losses[-1] < min_val_loss):

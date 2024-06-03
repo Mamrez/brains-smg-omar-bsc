@@ -13,7 +13,8 @@ from bspysmg.model.lstm import LSTMModel
 from bspysmg.model.gru import GRUModel
 from bspysmg.model.transformer import TransformerModel
 from bspysmg.model.xgboost import XGBoostModel
-
+import torch
+torch.cuda.init()
 
 #inputs, outputs, info_dictionary = post_process('main\mainSamplingData', clipping_value=None)
 #print(f"max out {outputs.max()} max min {outputs.min()} shape {outputs.shape}")
