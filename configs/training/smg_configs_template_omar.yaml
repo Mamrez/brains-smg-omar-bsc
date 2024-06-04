@@ -13,7 +13,7 @@ hyperparameters: # Neural Network Hyperparameters for training phase;
   epochs: 30 # Number of tries on the total training dataset;
   # Note: The higher the more accurate model on "Training" dataset
   # Note: Should be chosen appropriately to prevent "Overfitting"
-  learning_rate: 0.008 # The smaller the learning rate the longer time for the model to be trained
+  learning_rate: 0.02 # The smaller the learning rate the longer time for the model to be trained
 
 data:
   dataset_paths:

@@ -21,5 +21,5 @@ torch.cuda.init()
 
 
 
-smg_configs = load_configs('configs/training/smg_configs_template_omar_transformer.yaml')
-generate_surrogate_model(smg_configs, custom_model=TransformerModel)
+smg_configs = load_configs('configs/training/smg_configs_template_omar.yaml')
+generate_surrogate_model(smg_configs, custom_model=LSTMModel)
