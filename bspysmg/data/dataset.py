@@ -12,6 +12,8 @@ from typing import Tuple, List
 import matplotlib.pyplot as plt
 from torch.utils.data import Subset
 import os
+from sklearn.preprocessing import MinMaxScaler
+
 
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
 class ModelDataset(Dataset):
@@ -81,6 +83,11 @@ class ModelDataset(Dataset):
             filename, steps)
         self.targets = (targets /
                         self.sampling_configs["driver"]["amplification"])
+        
+# Normalize inputs and targets using MinMaxScaler
+        self.inputs = self.normalize(self.inputs)
+        self.targets = self.normalize(self.targets)
+
         self.inputs = TorchUtils.format(self.inputs)
         self.targets = TorchUtils.format(self.targets)
 
@@ -202,6 +209,10 @@ class ModelDataset(Dataset):
             )
         return inputs, outputs, sampling_configs
 
+        
+    def normalize(self, data: np.array) -> np.array:
+            scaler = MinMaxScaler()
+            return scaler.fit_transform(data)
 
 def get_info_dict(training_configs: dict, sampling_configs: dict) -> dict:
     """
