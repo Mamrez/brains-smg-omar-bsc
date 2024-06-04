@@ -1,6 +1,8 @@
 import sys
 import os
+os.environ['FOR_DISABLE_CONSOLE_CTRL_HANDLER'] = '1'
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import itertools
 import yaml
 import numpy as np
@@ -13,7 +15,7 @@ from bspysmg.model.training import generate_surrogate_model
 from bspysmg.data.dataset import get_dataloaders
 from bspysmg.utils.plots import plot_wave_prediction, plot_error_hist, plot_error_vs_output
 from bspysmg.model.lstm import LSTMModel
-
+from bspysmg.model.gru import GRUModel
 
 # Custom read_yaml function
 def read_yaml(file_path):
@@ -31,7 +33,7 @@ def train_model(config_path):
     config = read_yaml(config_path)
     try:
         # Generate surrogate model using the existing pipeline
-        generate_surrogate_model(config, custom_model=LSTMModel, main_folder=os.path.splitext(os.path.basename(config_path))[0])
+        generate_surrogate_model(config, custom_model=GRUModel, main_folder=os.path.splitext(os.path.basename(config_path))[0])
         return True, config_path
     except Exception as e:
         print(f"Error training model with config {config_path}: {e}")
@@ -132,5 +134,5 @@ def main(gridsearch_path, model_name):
 
 
 if __name__ == "__main__":
-    main("configs\gridsearch\gridsearch.yaml", "LSTM")
+    main("configs\gridsearch\gridsearch.yaml", "GRU")
     
