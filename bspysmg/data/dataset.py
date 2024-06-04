@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from torch.utils.data import Subset
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"]="6"
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 class ModelDataset(Dataset):
     def __init__(self, filename: str, steps: int = 1) -> None:
         """

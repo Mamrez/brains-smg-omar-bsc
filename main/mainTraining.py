@@ -10,9 +10,10 @@ from bspysmg.model.training import generate_surrogate_model
 from brainspy.utils.io import load_configs
 from bspysmg.data.postprocess import post_process
 from bspysmg.model.lstm import LSTMModel
+from bspysmg.model.transformer import TransformerModel
 
-#inputs, outputs, info_dictionary = post_process('main\mainSamplingData', clipping_value=None)
-#print(f"max out {outputs.max()} max min {outputs.min()} shape {outputs.shape}")
+# inputs, outputs, info_dictionary = post_process('main\mainSamplingData', clipping_value=None)
+# print(f"max out {outputs.max()} max min {outputs.min()} shape {outputs.shape}")
 
 
 # # Define the base directory for saving YAML files
@@ -25,7 +26,7 @@ from bspysmg.model.lstm import LSTMModel
 # learning_rate_range = [0.01, 0.008, 0.004]
 # batch_size_range = range(100,401,100)
 
-# # Define the base YAML structure
+# # Define the base YAML structurey
 # base_yaml = {
 #     'results_base_dir': results_base_dir,
 #     'model_structure': {
@@ -77,18 +78,16 @@ from bspysmg.model.lstm import LSTMModel
 #         with open(file_path, 'x') as yaml_file:
 #             yaml.dump(config, yaml_file)
 
-        print(f"Created: {file_path}")
-"""
-"""
-for file_name in os.listdir('configs/training/Tuning'):
-    if file_name.endswith('.yaml'):
-        file_path = os.path.join('configs/training/Tuning', file_name)
-        smg_configs = load_configs(file_path)
-        print(file_path)
-        generate_surrogate_model(smg_configs, custom_model=LSTMModel,main_folder= os.path.splitext(file_name)[0])
+ #       print(f"Created: {file_path}")
 
-        print(f"Processed: {file_path}")
-"""
+# for file_name in os.listdir('configs/training/Tuning'):
+#     if file_name.endswith('.yaml'):
+#         file_path = os.path.join('configs/training/Tuning', file_name)
+#         smg_configs = load_configs(file_path)
+#         print(file_path)
+#         generate_surrogate_model(smg_configs, custom_model=LSTMModel,main_folder= os.path.splitext(file_name)[0])
+
+#         print(f"Processed: {file_path}")
 
 smg_configs = load_configs('configs/training/smg_configs_template_omar.yaml')
 generate_surrogate_model(smg_configs, custom_model=LSTMModel)
