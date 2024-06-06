@@ -132,5 +132,5 @@ def main(gridsearch_path, model_name):
 
 
 if __name__ == "__main__":
-    main("configs\gridsearch\gridsearch.yaml", "LSTM")
+    main("configs\gridsearch\gridsearch.yaml", "LSTM_norm_fix_noOver40")
     

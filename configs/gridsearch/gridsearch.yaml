@@ -1,5 +1,5 @@
-results_base_dir: "main/mainTrainingData_HyperTuning/LSTM"  # Base directory for saving results
-config_base_dir: "configs/training/Tuning/LSTM"  # Base directory for saving generated config files
+results_base_dir: "main/mainTrainingData_HyperTuning/LSTM_norm_fix_noOver40"  # Base directory for saving results
+config_base_dir: "configs/training/Tuning/LSTM_norm_fix_noOver40"  # Base directory for saving generated config files
 
 model_structure:  # Surrogate model Neural Network model structure
   type: "RNN"  # Type of model (e.g., RNN, DNN)
@@ -17,7 +17,7 @@ hyperparameters:  # Neural Network Hyperparameters for training phase
 data:  # Data configuration
   dataset_paths:
     - "main/mainSamplingData/postprocessed_data.npz"  # Paths to the dataset
-  steps: 1  # Steps to be used during data loading
+  steps: 40  # Steps to be used during data loading
   batch_size: 100  # Batch size (this can be varied in the hyperparameter range)
   worker_no: 0  # Number of workers for data loading
   pin_memory: False  # Pin memory during data loading
@@ -28,20 +28,20 @@ data:  # Data configuration
 
 hyperparameter_ranges:  # Ranges and steps for hyperparameters
   model_structure.sequence_length:  # Range for sequence length
-    start: 10
-    stop: 151
-    step: 10
+    start: 50
+    stop: 251
+    step: 100
   model_structure.hidden_size:  # Range for hidden size
     start: 32
     stop: 321
-    step: 32
+    step: 64
   model_structure.num_layers:  # Range for number of layers
     start: 1
-    stop: 3
+    stop: 2
     step: 1
   hyperparameters.learning_rate:  # Range for learning rate
-    values: [0.02, 0.01, 0.008, 0.006]
+    values: [0.007]
   data.batch_size:  # Range for batch size
-    start: 100
-    stop: 1000
-    step: 100
+    start: 1000
+    stop: 1001
+    step: 1
