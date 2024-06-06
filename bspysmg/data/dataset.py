@@ -12,8 +12,10 @@ from typing import Tuple, List
 import matplotlib.pyplot as plt
 from torch.utils.data import Subset
 import os
+from sklearn.preprocessing import MinMaxScaler
 
-os.environ["CUDA_VISIBLE_DEVICES"]="2"
+
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 class ModelDataset(Dataset):
     def __init__(self, filename: str, steps: int = 1) -> None:
         """
@@ -81,6 +83,11 @@ class ModelDataset(Dataset):
             filename, steps)
         self.targets = (targets /
                         self.sampling_configs["driver"]["amplification"])
+        
+# Normalize inputs and targets using MinMaxScaler
+        self.inputs = self.normalize(self.inputs)
+        self.targets = self.normalize(self.targets)
+
         self.inputs = TorchUtils.format(self.inputs)
         self.targets = TorchUtils.format(self.targets)
 
@@ -202,6 +209,10 @@ class ModelDataset(Dataset):
             )
         return inputs, outputs, sampling_configs
 
+        
+    def normalize(self, data: np.array) -> np.array:
+            scaler = MinMaxScaler()
+            return scaler.fit_transform(data)
 
 def get_info_dict(training_configs: dict, sampling_configs: dict) -> dict:
     """
@@ -405,56 +416,60 @@ def get_dataloaders(
     
     if info_dict['model_structure']['type'] == 'RNN':
         sequence_length = info_dict['model_structure']['sequence_length']
-        chunk_size = max(configs['data']['batch_size'], sequence_length)  # Ensure chunk size is at least sequence_length
+        chunk_size = max(configs['data']['batch_size'], sequence_length)
 
         start_time = time.time()
         start_memory = memory_usage()
 
+        all_targets = []  # Collect all target values for plotting
+
         for i, dataset in enumerate(datasets):
             if dataset is not None:
                 total_samples = len(dataset)
-                num_sequences = (total_samples // sequence_length) * sequence_length
 
-                input_sequences = np.zeros((num_sequences, sequence_length, dataset[0][0].shape[0]))
-                target_values = np.zeros(num_sequences)
-                current_sequence_index = 0
+                input_sequences = []
+                target_values = []
 
-                # Initialize buffer to handle sequence spanning across chunks
                 buffer_data = []
 
                 for start_idx in range(0, total_samples, chunk_size):
                     end_idx = min(start_idx + chunk_size, total_samples)
-                    chunk_data = np.array(buffer_data) if buffer_data else np.empty((0, dataset[0][0].shape[0] + 1))  # Start with any leftover data from previous chunk
+                    chunk_data = np.array(buffer_data) if buffer_data else np.empty((0, dataset[0][0].shape[0] + 1))
 
-                    # Collect data for the current chunk
                     for j in range(start_idx, end_idx):
                         sample, target = dataset[j]
                         sample = sample.cpu().numpy() if sample.is_cuda else sample.numpy()
                         target = target.cpu().numpy() if target.is_cuda else target.numpy()
                         chunk_data = np.vstack((chunk_data, np.hstack((sample, target))))
 
-                    # Prepare sequences within the current chunk
+                    print(f"Number of zeros in chunk_data before sequence preparation: {np.sum(chunk_data == 0)}")
+
                     X, y = prepare_rnn_sequences(chunk_data, sequence_length)
 
-                    if (len(X) < len(y)):
-                        continue
+                    print(f"Number of zeros in prepared input sequences X: {np.sum(X == 0)}")
+                    print(f"Number of zeros in prepared target values y: {np.sum(y == 0)}")
 
-                    input_sequences[current_sequence_index:current_sequence_index + len(X)] = X
-                    target_values[current_sequence_index:current_sequence_index + len(X)] = y
-                    current_sequence_index += len(X)
+                    input_sequences.extend(X)
+                    target_values.extend(y)
 
-                    # Save the last 'sequence_length' data points to the buffer for the next chunk
                     buffer_data = chunk_data[-sequence_length + 1:].tolist() if len(chunk_data) >= sequence_length else chunk_data.tolist()
 
-                # Ensure any remaining data in the buffer is processed
                 if len(buffer_data) >= sequence_length:
                     buffer_data = np.array(buffer_data)
-                    X, y = prepare_rnn_sequences(chunk_data, sequence_length)
-                    input_sequences[current_sequence_index:current_sequence_index + len(X)] = X
-                    target_values[current_sequence_index:current_sequence_index + len(X)] = y
+                    X, y = prepare_rnn_sequences(buffer_data, sequence_length)
+                    input_sequences.extend(X)
+                    target_values.extend(y)
 
-                # datasets[i] = [(x, y_) for x, y_ in zip(input_sequences, target_values)]
                 datasets[i] = [(torch.tensor(x).float(), torch.tensor(y_).float()) for x, y_ in zip(input_sequences, target_values)]
+
+                all_targets.extend(target_values)  # Collect target values
+
+        plot_targets(np.array(all_targets), filename="rnn_prepared_targets.png", title="RNN Prepared Target Values", xlabel="Sequence Index", ylabel="Target Value")
+
+        for i, dataset in enumerate(datasets):
+            if dataset is not None:
+                print(f"Number of zeros in dataset[{i}] inputs: {sum([torch.sum(x == 0).item() for x, _ in dataset])}")
+                print(f"Number of zeros in dataset[{i}] targets: {sum([torch.sum(y == 0).item() for _, y in dataset])}")
 
         end_time = time.time()
         end_memory = memory_usage()
@@ -558,20 +573,47 @@ def split_dataset_seq(dataset, split_percentages):
     return [train_subset, valid_subset, test_subset]
     
 def prepare_rnn_sequences(data, sequence_length):
-    input_sequences = np.zeros((len(data) - sequence_length, sequence_length, data.shape[1] - 1))
-    target_values = np.zeros(len(data) - sequence_length)
+    input_sequences = []
+    target_values = []
 
     for start_idx in range(len(data) - sequence_length):
         input_seq = data[start_idx:start_idx + sequence_length, :-1]
         target_value = data[start_idx + sequence_length - 1, -1]
-        input_sequences[start_idx] = input_seq
-        target_values[start_idx] = target_value
+        input_sequences.append(input_seq)
+        target_values.append(target_value)
+
+    print(f"Number of zeros in input sequences: {np.sum(input_sequences == 0)}")
+    print(f"Number of zeros in target values: {np.sum(target_values == 0)}")
     return input_sequences, target_values
 
 def memory_usage():
     process = psutil.Process(os.getpid())
     mem_info = process.memory_info()
-    return mem_info.rss /1024 **2 
+    return mem_info.rss / 1024 ** 2 
+
+def plot_targets(targets: torch.Tensor, filename: str = "plot_ttargets.png", title: str = "Targets Plot", xlabel: str = "Sample Index", ylabel: str = "Target Value") -> None:
+    if isinstance(targets, torch.Tensor):
+        print(f"Targets is a tensor. Device: {targets.device}")
+    
+        if targets.is_cuda:
+            targets = targets.cpu()
+            print("Moved targets to CPU.")
+        
+        targets = targets.numpy()
+        print("Converted targets to numpy array.")
+
+    print(f"Targets type: {type(targets)}, shape: {targets.shape}")
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(targets, label="Target Value")
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.legend()
+    plt.grid(True)
+    
+    plt.savefig(filename)
+    print(f"Plot saved as {filename}")
 
 # def prepare_rnn_sequences(data, sequence_length):
 #     input_sequences = np.zeros((len(data) - sequence_length, sequence_length, data.shape[]))

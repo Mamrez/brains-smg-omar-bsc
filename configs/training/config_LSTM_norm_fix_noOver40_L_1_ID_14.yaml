@@ -1,0 +1,23 @@
+data:
+  batch_size: 4000
+  dataset_paths:
+  - main/mainSamplingData/postprocessed_data.npz
+  pin_memory: false
+  split_percentages:
+  - 0.8
+  - 0.1
+  - 0.1
+  steps: 40
+  worker_no: 0
+hyperparameters:
+  epochs: 15
+  learning_rate: 0.01
+model_structure:
+  D_in: 7
+  D_out: 1
+  hidden_size: 288
+  input_features: 7
+  num_layers: 1
+  sequence_length: 250
+  type: RNN
+results_base_dir: main/mainTrainingData_HyperTuning/LSTM_norm_fix_noOver40
