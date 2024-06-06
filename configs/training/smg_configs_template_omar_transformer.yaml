@@ -4,9 +4,9 @@ model_structure:  # Surrogate model Neural Network model structure;
   type: "RNN"
   input_features: 7
   sequence_length: 100
-  hidden_size: 560
-  num_layers: 6
-  num_heads: 8
+  hidden_size: 640
+  num_layers: 8
+  num_heads: 16
   D_in: 7
   D_out: 1
 

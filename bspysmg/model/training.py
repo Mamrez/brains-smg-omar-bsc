@@ -213,7 +213,7 @@ def init_seed(configs: dict) -> None:
 #     # print("Model saved in :" + results_dir)
 #     return saved_dir
 
-
+"""
 def generate_surrogate_model(
         configs: dict,
         custom_model=None,
@@ -299,6 +299,97 @@ def generate_surrogate_model(
             os.path.join(results_dir, "training_data.pt"))
         training_data['test_loss'] = loss
         torch.save(training_data, os.path.join(results_dir, "training_data.pt"))
+    return saved_dir
+"""
+
+from bspysmg.model.tft import TFTModel
+import pytorch_lightning as pl
+
+def generate_surrogate_model(
+        configs: dict,
+        custom_model=None,
+        criterion: torch.nn.modules.loss._Loss = MSELoss(),
+        custom_optimizer: torch.optim.Optimizer = Adam,
+        main_folder: str = "training_data") -> None:
+
+    init_seed(configs)
+    results_dir = create_directory_timestamp(configs["results_base_dir"], main_folder)
+
+    dataloaders, amplification, info_dict = get_dataloaders(configs)
+
+    if custom_model is None:
+        raise ValueError("custom_model must be provided and cannot be None")
+
+    if isinstance(custom_model, type) and issubclass(custom_model, TFTModel):
+        model = custom_model(info_dict["model_structure"], dataloaders[0], dataloaders[1])
+        model.create_datasets()
+        model.build_model()
+        model.train_model(max_epochs=configs["hyperparameters"]["epochs"])
+
+        performances = model.trainer.logged_metrics
+        saved_dir = results_dir
+    else:
+        model = custom_model(info_dict["model_structure"])
+        model = TorchUtils.format(model)
+
+        optimizer = custom_optimizer(
+            filter(lambda p: p.requires_grad, model.parameters()),
+            lr=configs["hyperparameters"]["learning_rate"],
+            betas=(0.9, 0.75),
+        )
+
+        scaler = GradScaler()
+
+        model, performances, saved_dir = train_loop(
+            model,
+            info_dict,
+            (dataloaders[0], dataloaders[1]),
+            criterion,
+            optimizer,
+            configs["hyperparameters"]["epochs"],
+            amplification,
+            save_dir=results_dir,
+            scaler=scaler
+        )
+
+    # Plot results
+    start_index = 0
+    labels = ["TRAINING", "VALIDATION", "TEST"]
+    for i in range(len(dataloaders)):
+        if dataloaders[i] is not None:
+            io_file_path = 'main/mainSamplingData/IO.dat'
+            loss = postprocess(
+                dataloaders[i],
+                model,
+                criterion,
+                amplification,
+                results_dir,
+                label=labels[i],
+                io_file_path=io_file_path,
+                start_index=start_index
+            )
+            start_index += len(dataloaders[i])
+
+    plt.figure()
+    plt.plot(TorchUtils.to_numpy(performances[0]))
+    if len(performances) > 1 and not len(performances[1]) == 0:
+        plt.plot(TorchUtils.to_numpy(performances[1]))
+    if dataloaders[-1].tag == 'test':
+        plt.plot(np.ones(len(performances[-1])) * TorchUtils.to_numpy(loss))
+        plt.title("Training profile /n Test loss : %.6f (nA)" % loss)
+    else:
+        plt.title("Training profile")
+    if not len(performances[1]) == 0:
+        plt.legend(["training", "validation"])
+    plt.xlabel("Epoch no.")
+    plt.ylabel("RMSE (nA)")
+    plt.savefig(os.path.join(results_dir, "training_profile"))
+    if not dataloaders[-1].tag == 'train':
+        training_data = torch.load(
+            os.path.join(results_dir, "training_data.pt"))
+        training_data['test_loss'] = loss
+        torch.save(training_data, os.path.join(results_dir,
+                                               "training_data.pt"))
     return saved_dir
 
 
@@ -439,11 +530,7 @@ def train_loop(
             description += "Validation loss (RMSE): {:.6f} (nA)\n".format(
                 val_losses[-1].item())
             
-            early_stopper(val_loss.item(), model)
-
-            if early_stopper.early_stop:
-                print('Early stopping')
-                break
+            
             # Save only when peak val performance is reached
             if (save_dir is not None and early_stopping
                     and val_losses[-1] < min_val_loss):
@@ -466,9 +553,15 @@ def train_loop(
         print(description)
         # looper.set_description(description)
 
-    # TODO: Add a save instruction and a stopping criteria
-    # if stopping_criteria(train_losses, val_losses):
-    #     break
+        # TODO: Add a save instruction and a stopping criteria
+        # if stopping_criteria(train_losses, val_losses):
+        #     break
+        early_stopper(val_loss.item(), model)
+
+        if early_stopper.early_stop:
+            print('Early stopping')
+            break
+    
     print("\nFinished training model. ")
     print("Model saved in: " + save_dir)
     if (save_dir is not None and early_stopping and dataloaders[1] is not None
@@ -601,18 +694,18 @@ def default_train_step(
             predictions = model(inputs)
             if torch.isnan(predictions).any():
                 print("Predictions contain nan values!")
-                print(predictions)
+                # print(predictions)
             loss = criterion(predictions, targets)
             if torch.isnan(loss).any():
                 print("Loss contains nan values!")
-                print(loss)
+                # print(loss)
 
         loss = loss / accumulation_steps
         scaler.scale(loss).backward()
 
-        # Gradient clipping
-        if isinstance(model, TransformerModel):
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+        # # Gradient clipping
+        # if isinstance(model, TransformerModel):
+        #     torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
 
         if (i + 1) % accumulation_steps == 0:
             scaler.step(optimizer)

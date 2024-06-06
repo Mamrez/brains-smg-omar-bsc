@@ -13,6 +13,8 @@ from bspysmg.model.lstm import LSTMModel
 from bspysmg.model.gru import GRUModel
 from bspysmg.model.transformer import TransformerModel
 from bspysmg.model.xgboost import XGBoostModel
+from bspysmg.model.transformer_dropnorm import TransformerModelDropNorm
+from bspysmg.model.tft import TFTModel
 import torch
 torch.cuda.init()
 
@@ -96,4 +98,4 @@ torch.cuda.init()
 
 
 smg_configs = load_configs('configs/training/smg_configs_template_omar_transformer.yaml')
-generate_surrogate_model(smg_configs, custom_model=TransformerModel)
+generate_surrogate_model(smg_configs, custom_model=TFTModel)
