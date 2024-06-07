@@ -303,7 +303,7 @@ def generate_surrogate_model(
 """
 
 from bspysmg.model.tft import TFTModel
-import pytorch_lightning as pl
+#import pytorch_lightning as pl
 
 def generate_surrogate_model(
         configs: dict,
@@ -850,6 +850,11 @@ def postprocess(dataloader: torch.utils.data.DataLoader,
      # Plot wave predictions if IO file path is provided
     if io_file_path:
         plot_wave_prediction(io_file_path, all_predictions, data_type=label, save_directory=results_dir,start_index=start_index, all_targets=all_targets)
+
+    try:
+        np.savez(results_dir + f"/predictionTargetsData_{label}.npz",all_targets,all_predictions)
+    except:
+        print("Exception occured!")
 
     return torch.sqrt(running_loss)
 

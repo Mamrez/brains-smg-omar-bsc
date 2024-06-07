@@ -172,10 +172,12 @@ class Sampler:
         """
         dimensions = self.configs["input_data"]["activation_electrode_no"]
         ramp = int(self.configs["input_data"]["ramp_points"])
+        rest = int(self.configs["input_data"]["ramp_points"]) // 2
         ramped_input = np.zeros((dimensions, self.nr_points_ramped_signal))
         for j in range(dimensions):
             ramped_input[j, 0:ramp] = np.linspace(0, x[j, 0], ramp)
-            ramped_input[j, ramp:self.end_batch] = x[j, :]
+            ramped_input[j,ramp:rest] = x[j, 0]
+            ramped_input[j, rest:self.end_batch] = x[j, :]
             ramped_input[j, self.end_batch:] = np.linspace(x[j, -1], 0, ramp)
         return ramped_input
 
@@ -356,7 +358,7 @@ class Sampler:
         self.end_batch = int(input_dict["ramp_points"] +
                              input_dict["batch_points"])
         self.nr_points_ramped_signal = int(input_dict["batch_points"] +
-                                           2 * input_dict["ramp_points"])
+                                           2 * input_dict["ramp_points"] + input_dict["rest_points"] // 2)
 
         self.filter_ramp = np.zeros(self.nr_points_ramped_signal, dtype=bool)
         self.filter_ramp[int(input_dict["ramp_points"]):int(self.end_batch
