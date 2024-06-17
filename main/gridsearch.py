@@ -33,7 +33,7 @@ def train_model(config_path):
     config = read_yaml(config_path)
     try:
         # Generate surrogate model using the existing pipeline
-        generate_surrogate_model(config, custom_model=GRUModel, main_folder=os.path.splitext(os.path.basename(config_path))[0])
+        generate_surrogate_model(config, custom_model=LSTMModel, main_folder=os.path.splitext(os.path.basename(config_path))[0])
         return True, config_path
     except Exception as e:
         print(f"Error training model with config {config_path}: {e}")
@@ -134,5 +134,5 @@ def main(gridsearch_path, model_name):
 
 
 if __name__ == "__main__":
-    main("configs\gridsearch\gridsearch.yaml", "GRU")
+    main("configs\gridsearch\gridsearch.yaml", "LSTM")
     

@@ -211,6 +211,7 @@ cython_debug/
 #.idea/
 
 main/mainTrainingData/
+main/mainTrainingDataFull/
 main/mainTrainingData_HyperTuning/
 configs/training/AlreadyTuned
 configs/training/Tuning
@@ -220,3 +221,5 @@ main/mainSamplingDataFull/
 main/statistical_analyiss
 IO_1Mio.dat
 IO_500k.dat
+IO_noRest.dat
+IO_rest_time.dat

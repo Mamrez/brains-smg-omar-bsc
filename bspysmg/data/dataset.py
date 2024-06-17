@@ -211,8 +211,14 @@ class ModelDataset(Dataset):
 
         
     def normalize(self, data: np.array) -> np.array:
-            scaler = MinMaxScaler()
-            return scaler.fit_transform(data)
+        mean = np.mean(data, axis=0)
+        std = np.std(data, axis=0)
+        normalized_data = (data - mean) / std
+
+        scaler = MinMaxScaler(feature_range=(-1, 1))
+        scaled_data = scaler.fit_transform(normalized_data)
+
+        return scaled_data
 
 def get_info_dict(training_configs: dict, sampling_configs: dict) -> dict:
     """

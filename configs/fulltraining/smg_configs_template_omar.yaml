@@ -22,11 +22,11 @@ data:
  
 
   steps: 1
-  batch_size: 100000
+  batch_size: 2500
   worker_no: 0
   pin_memory: False
 
   split_percentages: # Default config. where you have collected seperated data for training, validation, and testing data in seperate measurements. # Only works if there is a single dataset path
     - 0.8 # Training data
-    - 0.1994
-    - 0.0006 # Dev/validation data
+    - 0.175
+    - 0.025 # Dev/validation data
