@@ -10,6 +10,7 @@ from bspysmg.model.training import generate_surrogate_model
 from brainspy.utils.io import load_configs
 from bspysmg.data.postprocess import post_process
 from bspysmg.model.lstm import LSTMModel
+from bspysmg.model.lstmconv import LSTMConvModel
 from bspysmg.model.gru import GRUModel
 from bspysmg.model.transformer import TransformerModel
 from bspysmg.model.xgboost import XGBoostModel
@@ -24,5 +25,5 @@ torch.cuda.init()
 #print(f"max out {outputs.max()} max min {outputs.min()} shape {outputs.shape}")
 
 
-smg_configs = load_configs('configs/training/config_LSTM_norm_fix_noOver40_L_1_ID_14.yaml')
-generate_surrogate_model(smg_configs, custom_model=LSTMModel)
+smg_configs = load_configs('configs/training/smg_configs_template_omar.yaml')
+generate_surrogate_model(smg_configs, custom_model=LSTMConvModel)

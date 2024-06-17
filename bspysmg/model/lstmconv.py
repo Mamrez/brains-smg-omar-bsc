@@ -46,7 +46,7 @@ class LSTMConvModel(nn.Module):
 
     def structure_consistency_check(self, model_structure: dict):
         default_structure = {
-            "input_channels": 1,
+            "input_channels": 150,
             "output_channels": 32,
             "kernel_size": 3,
             "stride": 1,
