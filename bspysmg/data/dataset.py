@@ -442,12 +442,12 @@ def get_dataloaders(
                         target = target.cpu().numpy() if target.is_cuda else target.numpy()
                         chunk_data = np.vstack((chunk_data, np.hstack((sample, target))))
 
-                    print(f"Number of zeros in chunk_data before sequence preparation: {np.sum(chunk_data == 0)}")
+                    #print(f"Number of zeros in chunk_data before sequence preparation: {np.sum(chunk_data == 0)}")
 
                     X, y = prepare_rnn_sequences(chunk_data, sequence_length)
 
-                    print(f"Number of zeros in prepared input sequences X: {np.sum(X == 0)}")
-                    print(f"Number of zeros in prepared target values y: {np.sum(y == 0)}")
+                    #print(f"Number of zeros in prepared input sequences X: {np.sum(X == 0)}")
+                    #print(f"Number of zeros in prepared target values y: {np.sum(y == 0)}")
 
                     input_sequences.extend(X)
                     target_values.extend(y)
@@ -466,11 +466,7 @@ def get_dataloaders(
 
         plot_targets(np.array(all_targets), filename="rnn_prepared_targets.png", title="RNN Prepared Target Values", xlabel="Sequence Index", ylabel="Target Value")
 
-        for i, dataset in enumerate(datasets):
-            if dataset is not None:
-                print(f"Number of zeros in dataset[{i}] inputs: {sum([torch.sum(x == 0).item() for x, _ in dataset])}")
-                print(f"Number of zeros in dataset[{i}] targets: {sum([torch.sum(y == 0).item() for _, y in dataset])}")
-
+       
         end_time = time.time()
         end_memory = memory_usage()
 
@@ -582,8 +578,8 @@ def prepare_rnn_sequences(data, sequence_length):
         input_sequences.append(input_seq)
         target_values.append(target_value)
 
-    print(f"Number of zeros in input sequences: {np.sum(input_sequences == 0)}")
-    print(f"Number of zeros in target values: {np.sum(target_values == 0)}")
+    #print(f"Number of zeros in input sequences: {np.sum(input_sequences == 0)}")
+    #print(f"Number of zeros in target values: {np.sum(target_values == 0)}")
     return input_sequences, target_values
 
 def memory_usage():
