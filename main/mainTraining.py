@@ -10,6 +10,7 @@ from bspysmg.model.training import generate_surrogate_model
 from brainspy.utils.io import load_configs
 from bspysmg.data.postprocess import post_process
 from bspysmg.model.lstm import LSTMModel
+from bspysmg.model.lstmconv import LSTMConvModel
 from bspysmg.model.gru import GRUModel
 from bspysmg.model.transformer import TransformerModel
 from bspysmg.model.xgboost import XGBoostModel

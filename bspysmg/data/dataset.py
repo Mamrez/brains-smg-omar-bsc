@@ -15,7 +15,7 @@ import os
 from sklearn.preprocessing import MinMaxScaler
 
 
-os.environ["CUDA_VISIBLE_DEVICES"]="0"
+os.environ["CUDA_VISIBLE_DEVICES"]="6"
 class ModelDataset(Dataset):
     def __init__(self, filename: str, steps: int = 1) -> None:
         """
