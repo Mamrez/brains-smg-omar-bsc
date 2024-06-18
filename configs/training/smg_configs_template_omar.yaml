@@ -17,7 +17,7 @@ hyperparameters: # Neural Network Hyperparameters for training phase;
 
 data:
   dataset_paths:
-    ["main/mainSamplingData/postprocessed_data.npz"]
+    ["main/mainSamplingDataFull/postprocessed_data.npz"]
     # Paths to the sampled data, which should be either gathered in training, validation, and testing data or splitted later with split_percentages
  
 

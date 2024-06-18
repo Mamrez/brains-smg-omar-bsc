@@ -215,6 +215,8 @@ class Sampler:
             phase = np.zeros(
                 (self.configs["input_data"]["activation_electrode_no"], 1))
         phase_randomisation_count = 0
+         # Initialize shift counter
+        shift_counter = 0   
         for batch, batch_indices in enumerate(
                 self.get_batch_indices(total_number_samples, batch_size)):
             start_batch = time.time()
@@ -222,6 +224,10 @@ class Sampler:
             # Generate inputs (without ramping)
             batch += 1
             time_points = all_time_points[batch_indices]
+
+            input_dict['input_frequency_numpy'] = np.roll(input_dict['input_frequency_numpy'], shift_counter)
+            shift_counter += 1
+
             inputs = self.generate_inputs(time_points,
                                           input_dict['input_frequency_numpy'], phase,
                                           input_dict['amplitude_numpy'],

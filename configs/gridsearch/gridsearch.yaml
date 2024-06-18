@@ -16,7 +16,7 @@ hyperparameters:  # Neural Network Hyperparameters for training phase
 
 data:  # Data configuration
   dataset_paths:
-    - "main/mainSamplingData/postprocessed_data.npz"  # Paths to the dataset
+    - "main/mainSamplingDataFull/postprocessed_data.npz"  # Paths to the dataset
   steps: 1  # Steps to be used during data loading
   batch_size: 3750  # Batch size (this can be varied in the hyperparameter range)
   worker_no: 0  # Number of workers for data loading
@@ -34,9 +34,9 @@ hyperparameter_ranges:  # Ranges and steps for hyperparameters
   model_structure.hidden_size:  # Range for hidden size
     start: 32
     stop: 289
-    step: 123
+    step: 64
   model_structure.num_layers:  # Range for number of layers
-    start: 2
+    start: 1
     stop: 3
     step: 1
   hyperparameters.learning_rate:  # Range for learning rate
