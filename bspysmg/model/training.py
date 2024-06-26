@@ -338,6 +338,9 @@ def generate_surrogate_model(
             betas=(0.9, 0.75),
         )
 
+        total_params = sum(p.numel() for p in model.parameters())
+        print(f"Number of parameters: {total_params}")
+        
         scaler = GradScaler()
 
         model, performances, saved_dir = train_loop(

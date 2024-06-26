@@ -3,11 +3,13 @@ results_base_dir: main/mainTrainingData # Path to the directory where output fil
 model_structure:  # Surrogate model Neural Network model structure;
   type: "RNN"
   input_features: 7
-  sequence_length: 150
+  sequence_length: 50
   hidden_size: 32
-  num_layers: 2
+  num_layers: 1
   D_in: 7
   D_out: 1
+  dropout: 1
+  bidirectional: False
 
 hyperparameters: # Neural Network Hyperparameters for training phase;
   epochs: 15 # Number of tries on the total training dataset;
@@ -22,7 +24,7 @@ data:
  
 
   steps: 1
-  batch_size: 100
+  batch_size: 2000
   worker_no: 0
   pin_memory: False
 

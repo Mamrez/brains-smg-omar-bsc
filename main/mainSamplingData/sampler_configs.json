@@ -1,4 +1,5 @@
 data_name: full_dataset_measurement_3_with_random_freq
+data_name: full_dataset_measurement_3_with_random_freq
 driver:
   amplification:
   - 1
@@ -22,6 +23,7 @@ driver:
     - 14
     - 15
     activation_instrument: cDAQ4Mod1
+    activation_sampling_frequency: 10000
     activation_sampling_frequency: 10000
     activation_voltage_ranges:
     - - -0.75
@@ -47,6 +49,7 @@ driver:
     readout_channels:
     - 3
     readout_instrument: cDAQ4Mod4
+    readout_sampling_frequency: 100000
     readout_sampling_frequency: 100000
     trigger_source: cDAQ4
   inverted_output: false
@@ -81,6 +84,7 @@ input_data:
       - 0
     - false
     - !!binary |
+      AAAAAAAA6D8AAAAAAADoPwAAAAAAAOg/AAAAAAAA6D8AAAAAAADQPwAAAAAAANA/AAAAAAAA6D8=
       AAAAAAAA6D8AAAAAAADoPwAAAAAAAOg/AAAAAAAA6D8AAAAAAADQPwAAAAAAANA/AAAAAAAA6D8=
   base_input_frequency_multiplier: 50
   batch_time: 0.5
@@ -118,13 +122,17 @@ input_data:
   - 0
   - 0
   ramp_time: 0.6
+  ramp_time: 0.6
   random_phase_shift_each: 0
   readout_electrode_no: 1
 save_directory: main/mainSamplingData\full_dataset_measurement_3_with_random_freq_2024_06_19_144000
+save_directory: main/mainSamplingData\full_dataset_measurement_3_with_random_freq_2024_06_19_144000
 setup_insights:
+  device_comments: Room temp boron device.
   device_comments: Room temp boron device.
   device_material: Boron doped silicon
   gain_info: 50MOhm
   schematic: "\t   ao1   ao6   ao0\n \t    #     #     #\n \tao3 #           # output\n\
     \ \t    #     #     #\n \t   ao5   ao2   ao4\n"
+  setup_name: VtoV
   setup_name: VtoV
