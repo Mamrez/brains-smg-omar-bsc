@@ -22,4 +22,4 @@ def reduce_datapoints(file_path: str, num_points: int, activation_electrode_no: 
     print(f"Reduced data saved to {new_file_path}")
 
 
-reduce_datapoints("main/mainSamplingDataFull/IO.dat", 1000000, 7, 1)
+reduce_datapoints(r"C:\Users\User\Documents\brains\brains\main\mainSamplingData\IO.dat", 100000, 7, 1)

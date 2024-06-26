@@ -17,14 +17,15 @@ from bspysmg.model.xgboost import XGBoostModel
 from bspysmg.model.lstmconv import LSTMConvModel
 from bspysmg.model.transformer_dropnorm import TransformerModelDropNorm
 from bspysmg.model.tft import TFTModel
+from bspysmg.model.esu import ESNModel
 import torch
 
 
 torch.cuda.init()
 
-#inputs, outputs, info_dictionary = post_process('main\mainSamplingDataFull', clipping_value=None)
-#print(f"max out {outputs.max()} max min {outputs.min()} shape {outputs.shape}")
+inputs, outputs, info_dictionary = post_process('main\mainSamplingData', clipping_value=None)
+print(f"max out {outputs.max()} max min {outputs.min()} shape {outputs.shape}")
 
 
-smg_configs = load_configs('configs/fulltraining/smg_configs_template_omar.yaml')
+smg_configs = load_configs('configs/training/smg_configs_template_omar.yaml')
 generate_surrogate_model(smg_configs, custom_model=LSTMModel)

@@ -3,9 +3,12 @@ results_base_dir: main/mainTrainingData # Path to the directory where output fil
 model_structure:  # Surrogate model Neural Network model structure;
   type: "RNN"
   input_features: 7
+  reservoir_size: 500
+  spectral_radius: 0.95
   sequence_length: 150
-  hidden_size: 32
-  num_layers: 2
+  sparsity: 0.1
+  input_scaling: 0.1
+  output_size: 1
   D_in: 7
   D_out: 1
 
@@ -13,7 +16,7 @@ hyperparameters: # Neural Network Hyperparameters for training phase;
   epochs: 15 # Number of tries on the total training dataset;
   # Note: The higher the more accurate model on "Training" dataset
   # Note: Should be chosen appropriately to prevent "Overfitting"
-  learning_rate: 0.01 # The smaller the learning rate the longer time for the model to be trained
+  learning_rate: 0.008 # The smaller the learning rate the longer time for the model to be trained
 
 data:
   dataset_paths:
@@ -22,7 +25,7 @@ data:
  
 
   steps: 1
-  batch_size: 100
+  batch_size: 2500
   worker_no: 0
   pin_memory: False
 
