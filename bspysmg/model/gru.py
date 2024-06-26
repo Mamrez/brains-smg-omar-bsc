@@ -16,9 +16,12 @@ class GRUModel(nn.Module):
         self.sequence_length = model_structure["sequence_length"]
         self.hidden_size = model_structure["hidden_size"]
         self.num_layers = model_structure["num_layers"]
+        self.output_size = model_structure["output_size"]
+        self.dropout = model_structure["dropout"]
+        self.bidirectional = model_structure["bidirectional"]
 
-        self.gru_layer = nn.GRU(input_size=self.input_features, hidden_size=self.hidden_size, num_layers=self.num_layers, batch_first=True)
-        self.output_layer = nn.Linear(self.hidden_size * self.sequence_length, 1)
+        self.gru_layer = nn.GRU(input_size=self.input_features, hidden_size=self.hidden_size, num_layers=self.num_layers, batch_first=True, dropout=self.dropout, bidirectional=self.bidirectional)
+        self.output_layer = nn.Linear(self.hidden_size * self.sequence_length, self.output_size)
 
     def initialize_hidden_state(self, batch_size, dtype, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')):
         self.hidden = torch.zeros(self.num_layers, batch_size, self.hidden_size, device=device, dtype=dtype)

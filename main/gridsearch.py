@@ -134,5 +134,5 @@ def main(gridsearch_path, model_name):
 
 
 if __name__ == "__main__":
-    main("configs\gridsearch\gridsearch.yaml", "GRU_withRest")
+    main("configs\gridsearch\gridsearch.yaml", "GRU_RestTime_layer2")
     

@@ -1,14 +1,17 @@
-results_base_dir: "main/mainTrainingData_HyperTuning/LSTM_restTime_layer2"  # Base directory for saving results
-config_base_dir: "configs/training/Tuning/LSTM_restTime_layer2"  # Base directory for saving generated config files
+results_base_dir: "main/mainTrainingData_HyperTuning/GRU_withRestTime_Layer2"  # Base directory for saving results
+config_base_dir: "configs/training/Tuning/GRU_withRestTime_Layer2"  # Base directory for saving generated config files
 
 model_structure:  # Surrogate model Neural Network model structure
-  type: "RNN"  # Type of model (e.g., RNN, DNN)
-  input_features: 7  # Number of input features
-  sequence_length: 100  # Length of the input sequence (this can be varied in the hyperparameter range)
-  hidden_size: 32  # Size of the hidden layer (this can be varied in the hyperparameter range)
-  num_layers: 1  # Number of layers (this can be varied in the hyperparameter range)
-  D_in: 7  # Dimension of input
-  D_out: 1  # Dimension of output
+  type: "RNN"
+  input_features: 7
+  sequence_length: 150
+  hidden_size: 32
+  num_layers: 2
+  output_size: 1
+  D_in: 7
+  D_out: 1
+  dropout: 1
+  bidirectional: False
 
 hyperparameters:  # Neural Network Hyperparameters for training phase
   epochs: 15  # Number of epochs for training
@@ -16,9 +19,9 @@ hyperparameters:  # Neural Network Hyperparameters for training phase
 
 data:  # Data configuration
   dataset_paths:
-    - "main/mainSamplingDataFull/postprocessed_data.npz"  # Paths to the dataset
+    - "main/mainSamplingData/postprocessed_data.npz"  # Paths to the dataset
   steps: 1  # Steps to be used during data loading
-  batch_size: 3750  # Batch size (this can be varied in the hyperparameter range)
+  batch_size: 5000  # Batch size (this can be varied in the hyperparameter range)
   worker_no: 0  # Number of workers for data loading
   pin_memory: False  # Pin memory during data loading
   split_percentages:  # Split percentages for training, validation, and test sets
@@ -36,12 +39,12 @@ hyperparameter_ranges:  # Ranges and steps for hyperparameters
     stop: 289
     step: 64
   model_structure.num_layers:  # Range for number of layers
-    start: 1
+    start: 2
     stop: 3
     step: 1
   hyperparameters.learning_rate:  # Range for learning rate
     values: [0.01, 0.008]
   data.batch_size:  # Range for batch size
-    start: 3750
-    stop: 3751
+    start: 5000
+    stop: 5001
     step: 1

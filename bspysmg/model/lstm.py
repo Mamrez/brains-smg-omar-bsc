@@ -24,8 +24,7 @@ class LSTMModel(nn.Module):
             Number of LSTM layers.
 
             5. output_size : int
-
-            Number of Outputs for the linear layer
+            Number of Outputs for the linear layer.
         """
         super(LSTMModel, self).__init__()
         self.build_model_structure(model_structure)
@@ -49,6 +48,9 @@ class LSTMModel(nn.Module):
             
             4. num_layers : int
             Number of LSTM layers.
+
+            5. output_size : int
+            Number of outputs for the linear layer.
         """
         if model_structure is None:
             model_structure = {}
@@ -59,9 +61,13 @@ class LSTMModel(nn.Module):
         self.hidden_size = model_structure["hidden_size"]
         self.num_layers = model_structure["num_layers"]
         self.output_size = model_structure["output_size"]
+        self.dropout = model_structure["dropout"]
+        self.bidirectional = model_structure["bidirectional"]
 
-        self.lstm_layer = nn.LSTM(input_size=self.input_features, hidden_size=self.hidden_size, num_layers=self.num_layers, batch_first=True)
-        self.output_layer = nn.Linear(self.hidden_size * self.sequence_length, self.output_size)
+        self.lstm_layer = nn.LSTM(input_size=self.input_features, hidden_size=self.hidden_size, num_layers=self.num_layers, batch_first=True, dropout=self.dropout, bidirectional=self.bidirectional)
+        
+        direction_factor = 2 if self.bidirectional else 1
+        self.output_layer = nn.Linear(self.hidden_size * self.sequence_length * direction_factor, self.output_size)
 
     def initialize_hidden_state(self, batch_size, dtype, device=torch.device("cuda" if torch.cuda.is_available() else "cpu")):
         """
@@ -72,8 +78,9 @@ class LSTMModel(nn.Module):
         batch_size : int
             Size of the batch for which the hidden state is initialized.
         """
-        hidden_state = torch.zeros(self.num_layers, batch_size, self.hidden_size,device=device,dtype=dtype)
-        cell_state = torch.zeros(self.num_layers, batch_size, self.hidden_size,device=device,dtype=dtype)
+        direction_factor = 2 if self.bidirectional else 1
+        hidden_state = torch.zeros(self.num_layers * direction_factor, batch_size, self.hidden_size, device=device, dtype=dtype)
+        cell_state = torch.zeros(self.num_layers * direction_factor, batch_size, self.hidden_size, device=device, dtype=dtype)
         self.hidden = (hidden_state, cell_state)
 
     def forward(self, x):
@@ -88,7 +95,7 @@ class LSTMModel(nn.Module):
         Returns
         -------
         torch.Tensor
-            Output tensor of shape (batch_size, 1).
+            Output tensor of shape (batch_size, output_size).
         """
         batch_size, seq_len, _ = x.size()
         lstm_out, self.hidden = self.lstm_layer(x, self.hidden)
@@ -158,4 +165,6 @@ class LSTMModel(nn.Module):
             )
         else:
             output_size = model_structure.get('output_size')
-            assert isinstance(output_size, int) and output_size > 0, "num_layers must be a positive integer"
+            assert isinstance(output_size, int) and output_size > 0, "output_size must be a positive integer"
+
+

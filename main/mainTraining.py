@@ -4,6 +4,7 @@ import yaml
 import itertools
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+
 import matplotlib
 matplotlib.use('Agg') # To allow non-graphical plotting
 from bspysmg.model.training import generate_surrogate_model
@@ -22,9 +23,9 @@ import torch
 
 torch.cuda.init()
 
-#inputs, outputs, info_dictionary = post_process('main\mainSamplingDataFull', clipping_value=None)
+#inputs, outputs, info_dictionary = post_process('main\mainSamplingData', clipping_value=None)
 #print(f"max out {outputs.max()} max min {outputs.min()} shape {outputs.shape}")
 
 
-smg_configs = load_configs('configs/fulltraining/smg_configs_template_omar.yaml')
+smg_configs = load_configs('configs/training/smg_configs_template_omar.yaml')
 generate_surrogate_model(smg_configs, custom_model=LSTMModel)
