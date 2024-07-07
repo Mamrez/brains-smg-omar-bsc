@@ -21,7 +21,8 @@ class GRUModel(nn.Module):
         self.bidirectional = model_structure["bidirectional"]
 
         self.gru_layer = nn.GRU(input_size=self.input_features, hidden_size=self.hidden_size, num_layers=self.num_layers, batch_first=True, dropout=self.dropout, bidirectional=self.bidirectional)
-        self.output_layer = nn.Linear(self.hidden_size * self.sequence_length, self.output_size)
+        direction_factor = 2 if self.bidirectional else 1
+        self.output_layer = nn.Linear(self.hidden_size * self.sequence_length * direction_factor, self.output_size)
 
     def initialize_hidden_state(self, batch_size, dtype, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')):
         self.hidden = torch.zeros(self.num_layers, batch_size, self.hidden_size, device=device, dtype=dtype)
