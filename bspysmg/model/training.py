@@ -7,19 +7,14 @@ import matplotlib.pyplot as plt
 from torch.cuda.amp import GradScaler, autocast
 import numpy as np
 import gc
-# from brainspy.algorithm_manager import get_algorithm
-# from bspysmg.model.data.inputs.data_handler import get_training_data
 from tqdm import tqdm
-
 from torch.optim import Adam
 from torch.nn import MSELoss
-
 from brainspy.utils.pytorch import TorchUtils
 from brainspy.utils.io import create_directory_timestamp
 from brainspy.processors.simulation.model import NeuralNetworkModel
 from bspysmg.data.dataset import get_dataloaders
 from bspysmg.model.early_stopping import EarlyStopping
-from bspysmg.model.transformer import TransformerModel
 from bspysmg.utils.plots import plot_error_vs_output, plot_error_hist, plot_wave_prediction
 from bspysmg.model.lstm import LSTMModel
 from bspysmg.model.gru import GRUModel
@@ -301,9 +296,6 @@ def generate_surrogate_model(
         torch.save(training_data, os.path.join(results_dir, "training_data.pt"))
     return saved_dir
 """
-
-from bspysmg.model.tft import TFTModel
-#import pytorch_lightning as pl
 
 def generate_surrogate_model(
         configs: dict,
@@ -589,12 +581,6 @@ def train_loop(
 
     return model, [train_losses, val_losses], save_dir
 
-
-import xgboost as xgb
-import numpy as np
-from typing import List, Tuple
-import os
-from tqdm import tqdm
 
 def train_loop_xgboost(
     model,
