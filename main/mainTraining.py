@@ -22,5 +22,5 @@ torch.cuda.init()
 #print(f"max out {outputs.max()} max min {outputs.min()} shape {outputs.shape}")
 
 
-smg_configs = load_configs('configs/training/smg_configs_template_omar.yaml')
-generate_surrogate_model(smg_configs, custom_model=LSTMModel)
+smg_configs = load_configs('configs/training/smg_configs_template_omar_xgboost.yaml')
+generate_surrogate_model(smg_configs, custom_model=XGBoostModel)

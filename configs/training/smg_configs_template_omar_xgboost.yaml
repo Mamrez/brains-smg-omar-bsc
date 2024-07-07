@@ -1,12 +1,15 @@
 results_base_dir: main/mainTrainingData # Path to the directory where output files are saved.
 
 model_structure:  # Surrogate model Neural Network model structure;
-  type: "RNN"
+  type: "XGBoost" # Type of the model to be used.
   input_features: 7
-  sequence_length: 100
-  n_estimator: 100
-  max_depth: 3
+  objective: "reg:squarederror"
+  eval_metric: 'rmse'
+  colsample_bytree: 1.0
+  n_estimators: 500
+  max_depth: 4
   learning_rate: 0.1
+  subsample: 1.0
   D_in: 7
   D_out: 1
 

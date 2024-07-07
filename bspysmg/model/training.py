@@ -19,7 +19,6 @@ from brainspy.utils.io import create_directory_timestamp
 from brainspy.processors.simulation.model import NeuralNetworkModel
 from bspysmg.data.dataset import get_dataloaders
 from bspysmg.model.early_stopping import EarlyStopping
-from bspysmg.model.transformer import TransformerModel
 from bspysmg.utils.plots import plot_error_vs_output, plot_error_hist, plot_wave_prediction
 from bspysmg.model.lstm import LSTMModel
 from bspysmg.model.gru import GRUModel
@@ -302,8 +301,6 @@ def generate_surrogate_model(
     return saved_dir
 """
 
-from bspysmg.model.tft import TFTModel
-#import pytorch_lightning as pl
 
 def generate_surrogate_model(
         configs: dict,
@@ -325,8 +322,11 @@ def generate_surrogate_model(
         model.create_datasets()
         model.build_model()
         model.train_model(max_epochs=configs["hyperparameters"]["epochs"])
-
         performances = model.trainer.logged_metrics
+        saved_dir = results_dir
+
+    elif isinstance(custom_model, type) and issubclass(custom_model, xgb.XGBModel):
+        model = custom_model(info_dict["model_structure"], dataloaders[0], dataloaders[1])
         saved_dir = results_dir
     else:
         model = custom_model(info_dict["model_structure"])
@@ -768,9 +768,10 @@ def default_val_step(model: torch.nn.Module,
         val_loss /= len(dataloader.dataset)
     return val_loss
 
+import xgboost as xgb
+from sklearn.metrics import mean_squared_error
 
-def postprocess(dataloader: torch.utils.data.DataLoader,
-                model: torch.nn.Module, criterion: torch.nn.modules.loss._Loss,
+def postprocess(dataloader: torch.utils.data.DataLoader, model, criterion: torch.nn.modules.loss._Loss,
                 amplification: float, results_dir: str, label: str, io_file_path: str = None, start_index: int = 0) -> float:
     """
     Plots error vs output and error histogram for given dataset and saves it to
@@ -780,7 +781,7 @@ def postprocess(dataloader: torch.utils.data.DataLoader,
     ----------
     dataloader :  torch.utils.data.DataLoader
         A PyTorch Dataloader containing the training dataset.
-    model : custom model of type torch.nn.Module
+    model : custom model of type torch.nn.Module or XGBoostModel
         Model to be trained.
     criterion : <method>
         Loss function that will be used to train the model.
@@ -799,67 +800,153 @@ def postprocess(dataloader: torch.utils.data.DataLoader,
         Mean Squared error evaluated on given dataset.
     """
     print(f"Postprocessing {label} data ... ")
-    # i = 0
     running_loss = 0
     all_targets = []
     all_predictions = []
-    with torch.no_grad():
+
+    if isinstance(model, torch.nn.Module):
         model.eval()
-        for inputs, targets in tqdm(dataloader):
-            inputs, targets = to_device(inputs), to_device(targets)
+        with torch.no_grad():
+            for inputs, targets in tqdm(dataloader):
+                inputs, targets = to_device(inputs), to_device(targets)
+                targets = targets.view(-1, 1)
 
-            # Ensure the target tensor has the same shape as the input tensor
-            targets = targets.view(-1, 1)
+                predictions = model(inputs)
+                all_targets.append(amplification * targets)
+                all_predictions.append(amplification * predictions)
+                loss = criterion(predictions, targets)
+                running_loss += loss * inputs.shape[0]  # sum up batch loss
 
-            if isinstance(model, LSTMModel) or isinstance(model,GRUModel):
-                model.initialize_hidden_state(inputs.size(0),inputs.dtype)
+        running_loss /= len(dataloader.dataset)
+        running_loss = running_loss * (amplification ** 2)
 
-
-            predictions = model(inputs)
-            all_targets.append(amplification * targets)
-            all_predictions.append(amplification * predictions)
-            loss = criterion(predictions, targets)
-            running_loss += loss * inputs.shape[0]  # sum up batch loss
-
-    running_loss /= len(dataloader.dataset)
-    running_loss = running_loss * (amplification**2)
-
-    print(label.capitalize() +
-          " loss (MSE): {:.6f} (nA)".format(running_loss.item()))
-    print(
-        label.capitalize() +
-        " loss (RMSE): {:.6f} (nA)\n".format(torch.sqrt(running_loss).item()))
-
-    all_targets = TorchUtils.to_numpy(torch.cat(all_targets, dim=0))
-    all_predictions = TorchUtils.to_numpy(torch.cat(all_predictions, dim=0))
+        all_targets = TorchUtils.to_numpy(torch.cat(all_targets, dim=0))
+        all_predictions = TorchUtils.to_numpy(torch.cat(all_predictions, dim=0))
     
+    elif isinstance(model, xgb.XGBoostModel):
+        dtest = model.dataloader_to_dmatrix(dataloader)
+        predictions = model.predict(dtest)
+        all_predictions.extend(amplification * predictions)
+        for _, targets in dataloader:
+            targets = targets.numpy()
+            all_targets.extend(amplification * targets)
+        
+        all_targets = np.array(all_targets)
+        all_predictions = np.array(all_predictions)
+        running_loss = mean_squared_error(all_targets, all_predictions,squared=False)
+
+    else:
+        raise ValueError("Model must be of type torch.nn.Module or XGBoostModel")
+
     error = all_targets - all_predictions
-    
-    plot_error_vs_output(
-        all_targets,
-        error,
-        results_dir,
-        name=label + "_error_vs_output",
-    )
-    plot_error_hist(
-        all_targets,
-        all_predictions,
-        error,
-        TorchUtils.to_numpy(running_loss),
-        results_dir,
-        name=label + "_error",
-    )
 
-     # Plot wave predictions if IO file path is provided
+    print(f"{label.capitalize()} loss (MSE): {running_loss:.6f} (nA)")
+    print(f"{label.capitalize()} loss (RMSE): {np.sqrt(running_loss):.6f} (nA)\n")
+
+    plot_error_vs_output(all_targets, error, results_dir, name=label + "_error_vs_output")
+    plot_error_hist(all_targets, all_predictions, error, running_loss, results_dir, name=label + "_error")
+
     if io_file_path:
-        plot_wave_prediction(io_file_path, all_predictions, data_type=label, save_directory=results_dir,start_index=start_index, all_targets=all_targets)
+        plot_wave_prediction(io_file_path, all_predictions, data_type=label, save_directory=results_dir, start_index=start_index, all_targets=all_targets)
 
     try:
-        np.savez(results_dir + f"/predictionTargetsData_{label}.npz",all_targets,all_predictions)
-    except:
-        print("Exception occured!")
+        np.savez(os.path.join(results_dir, f"predictionTargetsData_{label}.npz"), all_targets, all_predictions)
+    except Exception as e:
+        print(f"Exception occurred while saving npz file: {e}")
 
-    return torch.sqrt(running_loss)
+    return np.sqrt(running_loss)
+
+# def postprocess(dataloader: torch.utils.data.DataLoader,
+#                 model, criterion: torch.nn.modules.loss._Loss,
+#                 amplification: float, results_dir: str, label: str, io_file_path: str = None, start_index: int = 0) -> float:
+#     """
+#     Plots error vs output and error histogram for given dataset and saves it to
+#     specified directory.
+
+#     Parameters
+#     ----------
+#     dataloader :  torch.utils.data.DataLoader
+#         A PyTorch Dataloader containing the training dataset.
+#     model : custom model of type torch.nn.Module
+#         Model to be trained.
+#     criterion : <method>
+#         Loss function that will be used to train the model.
+#     amplification: float
+#         Amplification correction factor used in the device to correct the amplification
+#         applied to the output current in order to convert it into voltage before its
+#         readout.
+#     results_dir : string
+#         Name of the path and file where the plots are to be saved.
+#     label : string
+#         Name of the dataset. I.e., train, validation or test.
+
+#     Returns
+#     -------
+#     float
+#         Mean Squared error evaluated on given dataset.
+#     """
+#     print(f"Postprocessing {label} data ... ")
+#     # i = 0
+#     running_loss = 0
+#     all_targets = []
+#     all_predictions = []
+#     with torch.no_grad():
+#         model.eval()
+#         for inputs, targets in tqdm(dataloader):
+#             inputs, targets = to_device(inputs), to_device(targets)
+
+#             # Ensure the target tensor has the same shape as the input tensor
+#             targets = targets.view(-1, 1)
+
+#             if isinstance(model, LSTMModel) or isinstance(model,GRUModel):
+#                 model.initialize_hidden_state(inputs.size(0),inputs.dtype)
+
+
+#             predictions = model(inputs)
+#             all_targets.append(amplification * targets)
+#             all_predictions.append(amplification * predictions)
+#             loss = criterion(predictions, targets)
+#             running_loss += loss * inputs.shape[0]  # sum up batch loss
+
+#     running_loss /= len(dataloader.dataset)
+#     running_loss = running_loss * (amplification**2)
+
+#     print(label.capitalize() +
+#           " loss (MSE): {:.6f} (nA)".format(running_loss.item()))
+#     print(
+#         label.capitalize() +
+#         " loss (RMSE): {:.6f} (nA)\n".format(torch.sqrt(running_loss).item()))
+
+#     all_targets = TorchUtils.to_numpy(torch.cat(all_targets, dim=0))
+#     all_predictions = TorchUtils.to_numpy(torch.cat(all_predictions, dim=0))
+    
+#     error = all_targets - all_predictions
+    
+#     plot_error_vs_output(
+#         all_targets,
+#         error,
+#         results_dir,
+#         name=label + "_error_vs_output",
+#     )
+#     plot_error_hist(
+#         all_targets,
+#         all_predictions,
+#         error,
+#         TorchUtils.to_numpy(running_loss),
+#         results_dir,
+#         name=label + "_error",
+#     )
+
+#      # Plot wave predictions if IO file path is provided
+#     if io_file_path:
+#         plot_wave_prediction(io_file_path, all_predictions, data_type=label, save_directory=results_dir,start_index=start_index, all_targets=all_targets)
+
+#     try:
+#         np.savez(results_dir + f"/predictionTargetsData_{label}.npz",all_targets,all_predictions)
+#     except:
+#         print("Exception occured!")
+
+#     return torch.sqrt(running_loss)
 
 # import numpy as np
 # from tqdm import tqdm
