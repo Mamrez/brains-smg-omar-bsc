@@ -16,7 +16,7 @@ from bspysmg.data.dataset import get_dataloaders
 from bspysmg.utils.plots import plot_wave_prediction, plot_error_hist, plot_error_vs_output
 from bspysmg.model.lstm import LSTMModel
 from bspysmg.model.gru import GRUModel
-from bspysmg.model.esu import ESNModel
+
 # Custom read_yaml function
 def read_yaml(file_path):
     with open(file_path, 'r') as file:
@@ -29,18 +29,18 @@ def save_yaml(config, file_path):
         yaml.dump(config, file)
 
 # Function to train the model using a configuration file
-def train_model(config_path):
+def train_model(config_path,custom_model):
     config = read_yaml(config_path)
     try:
         # Generate surrogate model using the existing pipeline
-        generate_surrogate_model(config, custom_model=ESNModel, main_folder=os.path.splitext(os.path.basename(config_path))[0])
+        generate_surrogate_model(config, custom_model=custom_model, main_folder=os.path.splitext(os.path.basename(config_path))[0])
         return True, config_path
     except Exception as e:
         print(f"Error training model with config {config_path}: {e}")
         return False, config_path
 
 # Main function
-def main(gridsearch_path, model_name):
+def main(gridsearch_path, model_name,custom_model):
     # Read the gridsearch.yaml
     print(f"Loading configuration from {gridsearch_path}")
     config = read_yaml(gridsearch_path)
@@ -99,7 +99,7 @@ def main(gridsearch_path, model_name):
             save_yaml(config_to_save, config_path)
             
             # Train the model with the current configuration
-            success, config_path = train_model(config_path)
+            success, config_path = train_model(config_path,custom_model=custom_model)
             if success:
                 # If training is successful, retrieve losses from saved model
                 result = {'config': config_filename}
@@ -134,5 +134,5 @@ def main(gridsearch_path, model_name):
 
 
 if __name__ == "__main__":
-    main("configs\gridsearch\gridsearch.yaml", "GRU_RestTime_layer2")
+    main("configs\gridsearch\gridsearch.yaml", "GRU_RestTime_layer2",custom_model=GRUModel)
     

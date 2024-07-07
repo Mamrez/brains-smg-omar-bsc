@@ -7,13 +7,9 @@ import matplotlib.pyplot as plt
 from torch.cuda.amp import GradScaler, autocast
 import numpy as np
 import gc
-# from brainspy.algorithm_manager import get_algorithm
-# from bspysmg.model.data.inputs.data_handler import get_training_data
 from tqdm import tqdm
-
 from torch.optim import Adam
 from torch.nn import MSELoss
-
 from brainspy.utils.pytorch import TorchUtils
 from brainspy.utils.io import create_directory_timestamp
 from brainspy.processors.simulation.model import NeuralNetworkModel
@@ -589,12 +585,6 @@ def train_loop(
 
     return model, [train_losses, val_losses], save_dir
 
-
-import xgboost as xgb
-import numpy as np
-from typing import List, Tuple
-import os
-from tqdm import tqdm
 
 def train_loop_xgboost(
     model,
