@@ -448,12 +448,8 @@ def get_dataloaders(
                         target = target.cpu().numpy() if target.is_cuda else target.numpy()
                         chunk_data = np.vstack((chunk_data, np.hstack((sample, target))))
 
-                    #print(f"Number of zeros in chunk_data before sequence preparation: {np.sum(chunk_data == 0)}")
-
                     X, y = prepare_rnn_sequences(chunk_data, sequence_length)
 
-                    #print(f"Number of zeros in prepared input sequences X: {np.sum(X == 0)}")
-                    #print(f"Number of zeros in prepared target values y: {np.sum(y == 0)}")
 
                     input_sequences.extend(X)
                     target_values.extend(y)
@@ -479,48 +475,6 @@ def get_dataloaders(
 
         print(f"Processing Time: {end_time - start_time} seconds")
         print(f"Memory usage: {end_memory - start_memory} MB")
-        #         if info_dict['model_structure']['type'] == 'LSTM':
-        # sequence_length = info_dict['model_structure']['sequence_length']
-        # chunk_size = max(configs['data']['batch_size'], sequence_length)  # Ensure chunk size is at least sequence_length
-        # for i, dataset in enumerate(datasets):
-        #     if dataset is not None:
-        #         total_samples = len(dataset)
-        #         input_sequences, target_values = [], []
-
-        #         # Initialize buffer to handle sequence spanning across chunks
-        #         buffer_data = []
-
-        #         for start_idx in range(0, total_samples, chunk_size):
-        #             end_idx = min(start_idx + chunk_size, total_samples)
-        #             chunk_data = buffer_data  # Start with any leftover data from previous chunk
-
-        #             # Collect data for the current chunk
-        #             for j in range(start_idx, end_idx):
-        #                 sample, target = dataset[j]
-        #                 sample = sample.cpu().numpy() if sample.is_cuda else sample.numpy()
-        #                 target = target.cpu().numpy() if target.is_cuda else target.numpy()
-        #                 chunk_data.append(np.hstack((sample, target)))
-
-        #             chunk_data = np.array(chunk_data)
-
-        #             # Prepare sequences within the current chunk
-        #             X, y = prepare_rnn_sequences(chunk_data, sequence_length)
-
-        #             input_sequences.extend(X)
-        #             target_values.extend(y)
-
-        #             # Save the last 'sequence_length' data points to the buffer for the next chunk
-        #             buffer_data = chunk_data[-sequence_length + 1:].tolist()
-
-        #         # Ensure any remaining data in the buffer is processed
-        #         if len(buffer_data) >= sequence_length:
-        #             buffer_data = np.array(buffer_data)
-        #             X, y = prepare_rnn_sequences(buffer_data, sequence_length)
-        #             input_sequences.extend(X)
-        #             target_values.extend(y)
-
-        #         datasets[i] = [(x, y_) for x, y_ in zip(input_sequences, target_values)]
-
     
 
 
@@ -588,8 +542,6 @@ def prepare_rnn_sequences(data, sequence_length):
         input_sequences.append(input_seq)
         target_values.append(target_value)
 
-    #print(f"Number of zeros in input sequences: {np.sum(input_sequences == 0)}")
-    #print(f"Number of zeros in target values: {np.sum(target_values == 0)}")
     return input_sequences, target_values
 
 def memory_usage():
@@ -620,13 +572,3 @@ def plot_targets(targets: torch.Tensor, filename: str = "plot_ttargets.png", tit
     
     plt.savefig(filename)
     print(f"Plot saved as {filename}")
-
-# def prepare_rnn_sequences(data, sequence_length):
-#     input_sequences = np.zeros((len(data) - sequence_length, sequence_length, data.shape[]))
-#     input_sequences, target_values = [], []
-#     for start_idx in range(len(data) - sequence_length):
-#         input_seq = data[start_idx:start_idx + sequence_length, :-1]
-#         target_value = data[start_idx + sequence_length - 1, -1]
-#         input_sequences.append(input_seq)
-#         target_values.append(target_value)
-#     return np.array(input_sequences), np.array(target_values)

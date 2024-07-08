@@ -155,17 +155,13 @@ def plot_wave_prediction(io_file_path: str, predictions: np.array, data_type: st
     save_directory : str
         Directory where the plot image will be saved.
     """
-    # Load the data from the IO.dat file
     data = np.loadtxt(io_file_path, comments='#')
     inputs = data[:, :-1]
     outputs = data[:, -1]
-
-    # Ensure predictions have the correct shape
     predictions = predictions.flatten()
 
     end_index = start_index + len(predictions)
 
-    # Create the plot
     plt.figure(figsize=(10, 8))
     plt.suptitle(f'I/O data for ' + data_type)
     

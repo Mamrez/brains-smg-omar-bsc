@@ -32,7 +32,7 @@ def save_yaml(config, file_path):
 def train_model(config_path,custom_model):
     config = read_yaml(config_path)
     try:
-        # Generate surrogate model using the existing pipeline
+       
         generate_surrogate_model(config, custom_model=custom_model, main_folder=os.path.splitext(os.path.basename(config_path))[0])
         return True, config_path
     except Exception as e:
@@ -41,7 +41,7 @@ def train_model(config_path,custom_model):
 
 
 def main(gridsearch_path, model_name,custom_model):
-    # Read the gridsearch.yaml
+  
     print(f"Loading configuration from {gridsearch_path}")
     config = read_yaml(gridsearch_path)
     
@@ -118,11 +118,8 @@ def main(gridsearch_path, model_name,custom_model):
         print("Interrupted by user")
 
     finally:
-        # Create a DataFrame to hold all results
+
         results_df = pd.DataFrame(results)
-        
-        # Print the columns to debug
-        print("Results DataFrame columns:", results_df.columns)
         
         # Save results to a CSV file
         results_df.to_csv(os.path.join(results_base_dir, 'results.csv'), index=False)

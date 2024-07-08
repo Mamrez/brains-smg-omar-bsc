@@ -51,7 +51,7 @@ def get_data(dataloaders):
     return train_features, val_features, test_features, train_target, val_target, test_target
 
 def plot_grid_search_results(csv_path):
-    # Read the CSV file into a DataFrame
+
     df = pd.read_csv(csv_path)
     
     # Plot the scores
@@ -86,7 +86,6 @@ def plot_predictions(true_values, predictions,csv_path, title='Predicted vs Actu
     plt.savefig(os.path.join(csv_path, 'grid_search_test_prediction.png'))
 
 def main(gridsearch_path):
-    # Read the gridsearch.yaml
     print(f"Loading configuration from {gridsearch_path}")
     config = read_yaml(gridsearch_path)
     

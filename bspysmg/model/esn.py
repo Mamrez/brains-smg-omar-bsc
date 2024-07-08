@@ -171,7 +171,7 @@ class ESNModel:
             Number of initial samples to discard for warmup (default is 100).
         """
         datasets = self.dataloaders_to_numpy()
-        # Assuming datasets[0] is train, datasets[1] is validation, and datasets[2] is test
+       
         _, X_train, y_train = datasets[0]
         self.fit(X_train, y_train, warmup)
 

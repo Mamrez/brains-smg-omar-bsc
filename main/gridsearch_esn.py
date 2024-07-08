@@ -73,17 +73,15 @@ def objective(dataset, config, *, input_scaling, N, sr, lr, ridge, seed):
     return {'loss': np.mean(losses), 'r2': np.mean(r2s)}
 
 def main(gridsearch_path):
-    # Read the gridsearch.yaml
+
     print(f"Loading configuration from {gridsearch_path}")
     config = read_yaml(gridsearch_path)
     
-    # Extract the hyperopt configuration
     hyperopt_config = process_hyperopt_config(config['hyperopt_config'])
     
     results_base_dir = config['results_base_dir']
     os.makedirs(results_base_dir, exist_ok=True)
 
-    # Save the hyperopt configuration to a JSON file
     config_path = os.path.join(results_base_dir, f"{hyperopt_config['exp']}.config.json")
     with open(config_path, "w+") as f:
         json.dump(hyperopt_config, f)

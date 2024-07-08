@@ -34,17 +34,6 @@ class XGBoostModel:
 
         self.num_boost_round = model_structure["n_estimators"]
 
-        # Extract model parameters
-        # self.objective = model_structure["objective"]
-        # self.evaL_metric = model_structure["eval_metric"]
-        # self.colsample_bytree = model_structure["colsample_bytree"]
-        # self.learning_rate = model_structure["learning_rate"]
-        # self.max_depth = model_structure["max_depth"]
-        # self.n_estimators = model_structure["n_estimators"]
-        # self.subsample = model_structure["subsample"]
-        # self.input_features = model_structure["input_features"]
-        # self.num_boost_round = model_structure["num_boost_round"]
-
         # Convert data into DMatrix format
         dtrain = self.dataloader_to_dmatrix(train)
         dtest = self.dataloader_to_dmatrix(test)

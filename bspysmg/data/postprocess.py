@@ -157,18 +157,6 @@ def post_process(data_dir: str,
     activation_electrode_no = configs["input_data"]["activation_electrode_no"]
     readout_electrode_no = configs["input_data"]["readout_electrode_no"]
 
-    # If the data comes from multiple sources. Merge them first.
-    # if "list_data" in kwargs.keys():
-    #     inputs, outputs, configs = data_merger(
-    #         data_dir,
-    #         kwargs["list_data"],
-    #         activation_electrode_no=activation_electrode_no,
-    #         readout_electrode_no=readout_electrode_no)
-    # elif len(kwargs.keys()) > 0:
-    #     assert (
-    #         False
-    #     ), f"{list(kwargs.keys())} not recognized! kwargs must be list_data"
-
     inputs, outputs = get_sampling_data(
         os.path.join(data_dir, "IO.dat"),
         activation_electrode_no=activation_electrode_no,
@@ -184,7 +172,7 @@ def post_process(data_dir: str,
             batch_length), "Data size mismatch!"
     output_scales = [np.min(outputs), np.max(outputs)]
     print(f"Output scales: [Min., Max.] = {output_scales}")
-    # input_scales = list(zip(np.min(inputs, axis=0), np.max(inputs, axis=0)))
+   
     print(f"Lower bound input scales: {np.min(inputs,axis=0)}")
     print(f"Upper bound input scales: {np.max(inputs,axis=0)}\n")
     # Get charging signals

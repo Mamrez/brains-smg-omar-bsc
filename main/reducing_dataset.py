@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def reduce_datapoints(file_path: str, start_index: int, end_index: int, activation_electrode_no: int, readout_electrode_no: int) -> None:
-    # Read the data from the file
+    
     data = np.loadtxt(file_path)
     
     # Ensure valid indices
@@ -45,5 +45,5 @@ def reduce_datapoints(file_path: str, start_index: int, end_index: int, activati
     plt.tight_layout()
     plt.show()
 
-# Example usage
+
 reduce_datapoints("main\mainSamplingData\IO.dat", 990000, 1000000, 7, 1)
