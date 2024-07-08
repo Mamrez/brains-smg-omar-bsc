@@ -4,10 +4,34 @@ from sklearn.metrics import mean_squared_error
 
 class XGBoostModel:
     def __init__(self, model_structure: dict, train, test):
+        """
+        Initialize the XGBoost model and train it using the provided training and testing data.
+        
+        Parameters
+        ----------
+        model_structure : dict
+            Dictionary containing the model structure.
+        train : DataLoader
+            Training data.
+        test : DataLoader
+            Testing data.
+        """
         self.train_model(model_structure, train, test)
 
-
     def dataloader_to_dmatrix(self, dataloader):
+        """
+        Convert a PyTorch DataLoader into an XGBoost DMatrix.
+        
+        Parameters
+        ----------
+        dataloader : DataLoader
+            DataLoader containing the data to be converted.
+        
+        Returns
+        -------
+        xgb.DMatrix
+            DMatrix containing the data and labels.
+        """
         data = []
         labels = []
         for batch in dataloader:
@@ -19,6 +43,18 @@ class XGBoostModel:
         return xgb.DMatrix(data, label=labels)
 
     def train_model(self, model_structure: dict, train, test):
+        """
+        Train the XGBoost model using the provided model structure and data.
+        
+        Parameters
+        ----------
+        model_structure : dict
+            Dictionary containing the model structure.
+        train : DataLoader
+            Training data.
+        test : DataLoader
+            Testing data.
+        """
         if model_structure is None:
             model_structure = {}
         self.structure_consistency_check(model_structure)
@@ -41,8 +77,20 @@ class XGBoostModel:
         self.dtest = dtest
         self.model = xgb.train(self.params, dtrain, self.num_boost_round)
 
-
     def structure_consistency_check(self, model_structure: dict):
+        """
+        Check if the model structure follows the expected standards and set defaults if not.
+        
+        Parameters
+        ----------
+        model_structure : dict
+            Dictionary of the model structure.
+        
+        Raises
+        ------
+        UserWarning
+            If a parameter is not in the expected format.
+        """
         defaults = {
             "objective": 'reg:squarederror',
             "eval_metric": 'rmse',
@@ -110,4 +158,17 @@ class XGBoostModel:
             assert isinstance(num_boost_round, int) and num_boost_round > 0, "num_boost_round must be a positive integer"
 
     def predict(self, dtest):
+        """
+        Make predictions using the trained XGBoost model.
+        
+        Parameters
+        ----------
+        dtest : xgb.DMatrix
+            DMatrix containing the testing data.
+        
+        Returns
+        -------
+        np.ndarray
+            Array of predictions.
+        """
         return self.model.predict(dtest)
