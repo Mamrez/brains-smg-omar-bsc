@@ -9,7 +9,6 @@ from brainspy.utils.pytorch import TorchUtils
 from typing import Tuple, List
 import matplotlib.pyplot as plt
 from torch.utils.data import Subset
-from bspysmg.data.rnndataset import RNNPreparedDataset
 
 class ModelDataset(Dataset):
     def __init__(self, filename: str, steps: int = 1) -> None:
@@ -403,7 +402,25 @@ def get_dataloaders(
         sequence_length = info_dict['model_structure']['sequence_length']
         for i, dataset in enumerate(datasets):
             if dataset is not None:
-                datasets[i] = RNNPreparedDataset(dataset, sequence_length)
+                data = []
+                for j in range(len(dataset)):
+                    sample, target = dataset[j]
+                    sample = sample.cpu().numpy() if sample.is_cuda else sample.numpy()
+                    target = target.cpu().numpy() if target.is_cuda else target.numpy()
+                    data.append(np.hstack((sample, target)))
+                data = np.array(data)
+                # Extract the 8th element from each array
+                eighth_elements = [arr[7] for arr in data]
+
+                # Plot the 8th elements
+                plt.plot(eighth_elements)
+                plt.title('8th Element of Each Array')
+                plt.xlabel('Array Index')
+                plt.ylabel('8th Element Value')
+                plt.savefig('debug_input.png')
+
+                X, y = prepare_rnn_sequences(data, sequence_length)
+                datasets[i] = [(x, y_) for x, y_ in zip(X, y)]
 
     # Create dataloaders
     dataloaders = []
@@ -459,3 +476,13 @@ def split_dataset_seq(dataset, split_percentages):
     
     return [train_subset, valid_subset, test_subset]
     
+def prepare_rnn_sequences(data, sequence_length):
+    input_sequences, target_values = [], []
+    for start_idx in range(len(data)):
+        end_idx = start_idx + sequence_length
+        if end_idx > len(data):
+            break
+        input_seq, target_value = data[start_idx:end_idx, :-1], data[end_idx-1, -1]
+        input_sequences.append(input_seq)
+        target_values.append(target_value)
+    return np.array(input_sequences), np.array(target_values)

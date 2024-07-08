@@ -11,8 +11,8 @@ from brainspy.utils.io import load_configs
 from bspysmg.data.postprocess import post_process
 from bspysmg.model.lstm import LSTMModel
 
-#inputs, outputs, info_dictionary = post_process('main\mainSamplingDataFull', clipping_value=None)
-#print(f"max out {outputs.max()} max min {outputs.min()} shape {outputs.shape}")
+inputs, outputs, info_dictionary = post_process('main\mainSamplingDataFull', clipping_value=None)
+print(f"max out {outputs.max()} max min {outputs.min()} shape {outputs.shape}")
       
 """
 # Define the base directory for saving YAML files
@@ -84,5 +84,5 @@ for file_name in os.listdir('configs/training/Tuning'):
         print(f"Processed: {file_path}")
 """
 
-smg_configs = load_configs('configs/training/smg_configs_template_omar.yaml')
+smg_configs = load_configs('configs/fulltraining/smg_configs_template_omar.yaml')
 generate_surrogate_model(smg_configs, custom_model=LSTMModel)

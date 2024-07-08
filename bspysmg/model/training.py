@@ -459,7 +459,6 @@ def default_val_step(model: torch.nn.Module,
         val_loss = 0
         model.eval()
         loop = tqdm(dataloader)
-
         for inputs, targets in loop:
             inputs, targets = to_device(inputs), to_device(targets)
 
