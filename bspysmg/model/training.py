@@ -417,7 +417,7 @@ def default_train_step(
         inputs, targets = to_device(inputs), to_device(targets)
 
         # Ensure the target tensor has the same shape as the input tensor
-        #targets = targets.view(-1, 1)
+        targets = targets.view(-1, 1)
 
         optimizer.zero_grad()
 
@@ -459,6 +459,7 @@ def default_val_step(model: torch.nn.Module,
         val_loss = 0
         model.eval()
         loop = tqdm(dataloader)
+
         for inputs, targets in loop:
             inputs, targets = to_device(inputs), to_device(targets)
 
@@ -580,8 +581,6 @@ def to_device(inputs: torch.Tensor) -> torch.Tensor:
     torch.Tensor
         Input tensor allocated to GPU device.
     """
-    if isinstance(inputs, (list, tuple)):
-        return [to_device(input_tensor) for input_tensor in inputs]
     if inputs.device != TorchUtils.get_device():
         inputs = inputs.to(device=TorchUtils.get_device())
     return inputs

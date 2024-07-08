@@ -22,7 +22,7 @@ data:
  
 
   steps: 1
-  batch_size: 12500
+  batch_size: 32
   worker_no: 0
   pin_memory: False
 
