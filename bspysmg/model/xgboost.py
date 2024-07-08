@@ -12,8 +12,8 @@ class XGBoostModel:
         labels = []
         for batch in dataloader:
             inputs, targets = batch
-            data.append(inputs.numpy())
-            labels.append(targets.numpy())
+            data.append(inputs.cpu().numpy())
+            labels.append(targets.cpu().numpy())
         data = np.vstack(data)
         labels = np.concatenate(labels)
         return xgb.DMatrix(data, label=labels)
@@ -29,11 +29,10 @@ class XGBoostModel:
             'colsample_bytree': model_structure["colsample_bytree"],
             'learning_rate': model_structure["learning_rate"],
             'max_depth': model_structure["max_depth"],
-            'n_estimators': model_structure["n_estimators"],
             'subsample': model_structure["subsample"]
         }
 
-        self.num_boost_round = model_structure["num_boost_round"]
+        self.num_boost_round = model_structure["n_estimators"]
 
         # Extract model parameters
         # self.objective = model_structure["objective"]
@@ -47,8 +46,8 @@ class XGBoostModel:
         # self.num_boost_round = model_structure["num_boost_round"]
 
         # Convert data into DMatrix format
-        dtrain = dataloader_to_dmatrix(train)
-        dtest = dataloader_to_dmatrix(test)
+        dtrain = self.dataloader_to_dmatrix(train)
+        dtest = self.dataloader_to_dmatrix(test)
 
         self.dtest = dtest
         self.model = xgb.train(self.params, dtrain, self.num_boost_round)

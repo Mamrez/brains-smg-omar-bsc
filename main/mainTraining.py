@@ -13,6 +13,7 @@ from bspysmg.data.postprocess import post_process
 from bspysmg.model.lstm import LSTMModel
 from bspysmg.model.gru import GRUModel
 from bspysmg.model.xgboost import XGBoostModel
+from bspysmg.model.esn import ESNModel
 import torch
 
 
@@ -22,5 +23,5 @@ torch.cuda.init()
 #print(f"max out {outputs.max()} max min {outputs.min()} shape {outputs.shape}")
 
 
-smg_configs = load_configs('configs/training/smg_configs_template_omar_xgboost.yaml')
-generate_surrogate_model(smg_configs, custom_model=XGBoostModel)
+smg_configs = load_configs('configs/training/smg_configs_template_omar_esn.yaml')
+generate_surrogate_model(smg_configs, custom_model=ESNModel)

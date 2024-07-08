@@ -6,9 +6,9 @@ model_structure:  # Surrogate model Neural Network model structure;
   objective: "reg:squarederror"
   eval_metric: 'rmse'
   colsample_bytree: 1.0
-  n_estimators: 500
-  max_depth: 4
-  learning_rate: 0.1
+  n_estimators: 300
+  max_depth: 3
+  learning_rate: 0.2
   subsample: 1.0
   D_in: 7
   D_out: 1
@@ -17,7 +17,6 @@ hyperparameters: # Neural Network Hyperparameters for training phase;
   epochs: 30 # Number of tries on the total training dataset;
   # Note: The higher the more accurate model on "Training" dataset
   # Note: Should be chosen appropriately to prevent "Overfitting"
-  learning_rate: 0.008 # The smaller the learning rate the longer time for the model to be trained
 
 data:
   dataset_paths:

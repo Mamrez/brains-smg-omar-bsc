@@ -19,7 +19,9 @@ from bspysmg.utils.plots import plot_error_vs_output, plot_error_hist, plot_wave
 from bspysmg.model.lstm import LSTMModel
 from bspysmg.model.gru import GRUModel
 from typing import Tuple, List
+from bspysmg.model.xgboost import XGBoostModel
 import xgboost as xgb
+from bspysmg.model.esn import ESNModel
 
 def init_seed(configs: dict) -> None:
     """
@@ -313,17 +315,14 @@ def generate_surrogate_model(
     if custom_model is None:
         raise ValueError("custom_model must be provided and cannot be None")
 
-    if isinstance(custom_model, type) and issubclass(custom_model, TFTModel):
+
+    if isinstance(custom_model, type) and issubclass(custom_model, XGBoostModel):
         model = custom_model(info_dict["model_structure"], dataloaders[0], dataloaders[1])
-        model.create_datasets()
-        model.build_model()
-        model.train_model(max_epochs=configs["hyperparameters"]["epochs"])
-        performances = model.trainer.logged_metrics
+        saved_dir = results_dir
+    elif isinstance(custom_model, type) and issubclass(custom_model, ESNModel):
+        model = custom_model(info_dict["model_structure"],dataloaders)
         saved_dir = results_dir
 
-    elif isinstance(custom_model, type) and issubclass(custom_model, xgb.XGBModel):
-        model = custom_model(info_dict["model_structure"], dataloaders[0], dataloaders[1])
-        saved_dir = results_dir
     else:
         model = custom_model(info_dict["model_structure"])
         model = TorchUtils.format(model)
@@ -369,26 +368,27 @@ def generate_surrogate_model(
             )
             start_index += len(dataloaders[i])
 
-    plt.figure()
-    plt.plot(TorchUtils.to_numpy(performances[0]))
-    if len(performances) > 1 and not len(performances[1]) == 0:
-        plt.plot(TorchUtils.to_numpy(performances[1]))
-    if dataloaders[-1].tag == 'test':
-        plt.plot(np.ones(len(performances[-1])) * TorchUtils.to_numpy(loss))
-        plt.title("Training profile /n Test loss : %.6f (nA)" % loss)
-    else:
-        plt.title("Training profile")
-    if not len(performances[1]) == 0:
-        plt.legend(["training", "validation"])
-    plt.xlabel("Epoch no.")
-    plt.ylabel("RMSE (nA)")
-    plt.savefig(os.path.join(results_dir, "training_profile"))
-    if not dataloaders[-1].tag == 'train':
-        training_data = torch.load(
-            os.path.join(results_dir, "training_data.pt"))
-        training_data['test_loss'] = loss
-        torch.save(training_data, os.path.join(results_dir,
-                                               "training_data.pt"))
+    if not issubclass(custom_model, XGBoostModel) and not issubclass(custom_model, ESNModel):
+        plt.figure()
+        plt.plot(TorchUtils.to_numpy(performances[0]))
+        if len(performances) > 1 and not len(performances[1]) == 0:
+            plt.plot(TorchUtils.to_numpy(performances[1]))
+        if dataloaders[-1].tag == 'test':
+            plt.plot(np.ones(len(performances[-1])) * TorchUtils.to_numpy(loss))
+            plt.title("Training profile /n Test loss : %.6f (nA)" % loss)
+        else:
+            plt.title("Training profile")
+        if not len(performances[1]) == 0:
+            plt.legend(["training", "validation"])
+        plt.xlabel("Epoch no.")
+        plt.ylabel("RMSE (nA)")
+        plt.savefig(os.path.join(results_dir, "training_profile"))
+        if not dataloaders[-1].tag == 'train':
+            training_data = torch.load(
+                os.path.join(results_dir, "training_data.pt"))
+            training_data['test_loss'] = loss
+            torch.save(training_data, os.path.join(results_dir,
+                                                "training_data.pt"))
     return saved_dir
 
 
@@ -813,17 +813,58 @@ def postprocess(dataloader: torch.utils.data.DataLoader, model, criterion: torch
         all_targets = TorchUtils.to_numpy(torch.cat(all_targets, dim=0))
         all_predictions = TorchUtils.to_numpy(torch.cat(all_predictions, dim=0))
     
-    elif isinstance(model, xgb.XGBoostModel):
+    elif isinstance(model, XGBoostModel):
         dtest = model.dataloader_to_dmatrix(dataloader)
         predictions = model.predict(dtest)
-        all_predictions.extend(amplification * predictions)
+        predictions = np.array(predictions, dtype=np.float32).reshape(-1, 1)
+        amplification = amplification.cpu().numpy()
+        all_predictions.extend((amplification * predictions).tolist())
         for _, targets in dataloader:
-            targets = targets.numpy()
-            all_targets.extend(amplification * targets)
+            targets = targets.cpu().numpy().astype(np.float32).reshape(-1, 1)
+            all_targets.extend((amplification * targets).tolist())
         
-        all_targets = np.array(all_targets)
-        all_predictions = np.array(all_predictions)
+        all_targets = np.array(all_targets, dtype=np.float32).reshape(-1, 1)
+        all_predictions = np.array(all_predictions, dtype=np.float32).reshape(-1, 1)
         running_loss = mean_squared_error(all_targets, all_predictions,squared=False)
+
+    elif isinstance(model, ESNModel):
+        all_targets = []
+        all_predictions = []
+        running_loss = 0.0
+
+        for inputs, targets in tqdm(dataloader):
+            # Move inputs and targets to CPU and convert to numpy arrays if they are not already
+            if isinstance(inputs, torch.Tensor):
+                inputs = inputs.cpu().numpy()
+            if isinstance(targets, torch.Tensor):
+                targets = targets.cpu().numpy()
+            if isinstance(amplification, torch.Tensor):
+                amplification = amplification.cpu().numpy()
+            # Make predictions with the ESN model
+            predictions = model.predict(inputs)
+            
+            # Amplify the targets and predictions
+            targets = amplification * targets
+            predictions = amplification * predictions
+            
+            all_targets.append(targets)
+            all_predictions.append(predictions)
+            
+            # Calculate the loss for the current batch
+            batch_loss = mean_squared_error(targets, predictions, squared=False)
+            running_loss += batch_loss * inputs.shape[0]  # Sum up batch loss
+            
+        # Average running loss over the entire dataset
+        running_loss /= len(dataloader.dataset)
+        running_loss = running_loss * (amplification ** 2)
+        
+        # Concatenate all targets and predictions
+        all_targets = np.concatenate(all_targets, axis=0)
+        all_predictions = np.concatenate(all_predictions, axis=0)
+
+        # Convert running_loss to a scalar if it is a numpy array
+        if isinstance(running_loss, np.ndarray):
+            running_loss = running_loss.item()
 
     else:
         raise ValueError("Model must be of type torch.nn.Module or XGBoostModel")

@@ -17,18 +17,18 @@ from bspysmg.utils.plots import plot_wave_prediction, plot_error_hist, plot_erro
 from bspysmg.model.lstm import LSTMModel
 from bspysmg.model.gru import GRUModel
 
-# Custom read_yaml function
+
 def read_yaml(file_path):
     with open(file_path, 'r') as file:
         config_dict = yaml.safe_load(file)
     return config_dict
 
-# Function to save a YAML configuration file
+
 def save_yaml(config, file_path):
     with open(file_path, 'w') as file:
         yaml.dump(config, file)
 
-# Function to train the model using a configuration file
+
 def train_model(config_path,custom_model):
     config = read_yaml(config_path)
     try:
@@ -39,7 +39,7 @@ def train_model(config_path,custom_model):
         print(f"Error training model with config {config_path}: {e}")
         return False, config_path
 
-# Main function
+
 def main(gridsearch_path, model_name,custom_model):
     # Read the gridsearch.yaml
     print(f"Loading configuration from {gridsearch_path}")

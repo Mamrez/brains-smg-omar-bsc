@@ -235,3 +235,4 @@ main/mainSamplingDataOLD/IO.dat
 main/mainSamplingDataOLD/sampler_configs.json
 main/mainSamplingData/sampler_configs.json
 main/mainSamplingData/sampler_configs.json
+hyperopt-esn

@@ -1,0 +1,39 @@
+results_base_dir: "main/mainTrainingData_HyperTuning/ESN"  # Base directory for saving results
+config_base_dir: "configs/training/Tuning/ESN"  # Base directory for saving generated config files
+
+
+model_structure:
+  type: ESU
+  input_features: 7
+  units: 500
+  learning_rate: 0.1
+  spectral_radius: 0.9
+  ridge: 0.01
+  input_scaling: 1.0
+  seed: 1234
+
+data:
+  dataset_paths:
+    - "main/mainSamplingData/postprocessed_data.npz"
+  steps: 1
+  batch_size: 100
+  worker_no: 0
+  pin_memory: False
+  split_percentages:
+    - 0.8
+    - 0.1
+    - 0.1
+
+hyperopt_config:
+  exp: "hyperopt-esn"
+  hp_max_evals: 2
+  hp_method: "random"
+  seed: 42
+  instances_per_trial: 1
+  hp_space:
+    N: ["choice", 500]
+    sr: ["loguniform", 1e-2, 10]
+    lr: ["loguniform", 1e-3, 1]
+    input_scaling: ["choice", 1.0]
+    ridge: ["loguniform", 1e-8, 1e1]
+    seed: ["choice", 1234]

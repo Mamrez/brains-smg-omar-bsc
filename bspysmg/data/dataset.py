@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from torch.utils.data import Subset
 import os
 from sklearn.preprocessing import MinMaxScaler
-
+import pandas as pd
 
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
 class ModelDataset(Dataset):
@@ -469,7 +469,8 @@ def get_dataloaders(
                 datasets[i] = [(torch.tensor(x).float(), torch.tensor(y_).float()) for x, y_ in zip(input_sequences, target_values)]
 
                 all_targets.extend(target_values)  # Collect target values
-
+    
+    
         plot_targets(np.array(all_targets), filename="rnn_prepared_targets.png", title="RNN Prepared Target Values", xlabel="Sequence Index", ylabel="Target Value")
 
        
@@ -519,6 +520,9 @@ def get_dataloaders(
         #             target_values.extend(y)
 
         #         datasets[i] = [(x, y_) for x, y_ in zip(input_sequences, target_values)]
+
+    
+
 
     # Create dataloaders
     dataloaders = []

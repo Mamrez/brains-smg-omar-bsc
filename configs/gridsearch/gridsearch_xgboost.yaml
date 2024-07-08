@@ -1,0 +1,45 @@
+results_base_dir: "main/mainTrainingData_HyperTuning/XGBoost"
+config_base_dir: "configs/training/Tuning/XGBoost"
+
+model_structure:
+  type: "XGBoost"
+  input_features: 7
+  objective: "reg:squarederror"
+  eval_metric: "rmse"
+  colsample_bytree: 1.0
+  n_estimators: 100
+  max_depth: 3
+  learning_rate: 0.1
+  subsample: 1.0
+  D_in: 7
+  D_out: 1
+
+hyperparameters:
+  epochs: 30
+  
+
+data:
+  dataset_paths:
+    - "main/mainSamplingData/postprocessed_data.npz"
+  steps: 1
+  batch_size: 100
+  worker_no: 0
+  pin_memory: False
+  split_percentages:
+    - 0.8
+    - 0.1
+    - 0.1
+
+hyperparameter_ranges:
+  model_structure.max_depth:
+    start: 3
+    stop: 4
+    step: 1
+  model_structure.learning_rate:
+    values: [0.01]
+  model_structure.n_estimators:
+    values: [100]
+  model_structure.subsample:
+    values: [0.8]
+  model_structure.colsample_bytree:
+    values: [0.8, 1.0]
