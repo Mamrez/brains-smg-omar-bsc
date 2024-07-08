@@ -1,32 +1,28 @@
-results_base_dir: tmp/output/conv_model # Path to the directory where output files are saved.
+results_base_dir: main/mainTrainingData # Path to the directory where output files are saved.
 
-model_structure: # Surrogate model Neural Network model structure;
-  type: "DNN"
-  hidden_sizes:
-    - 90
-    - 90
-    - 90
-    - 90
-    - 90
+model_structure:  # Surrogate model Neural Network model structure;
+  type: "LSTM"
+  input_features: 7
+  sequence_length: 50
+  hidden_size: 32
+  num_layers: 1
   D_in: 7
   D_out: 1
-  batch_norm: False
-  activation: relu
 
 hyperparameters: # Neural Network Hyperparameters for training phase;
-  epochs: 100 # Number of tries on the total training dataset;
+  epochs: 40 # Number of tries on the total training dataset;
   # Note: The higher the more accurate model on "Training" dataset
   # Note: Should be chosen appropriately to prevent "Overfitting"
-  learning_rate: 1.0e-03 # The smaller the learning rate the longer time for the model to be trained
+  learning_rate: 0.008 # The smaller the learning rate the longer time for the model to be trained
 
 data:
   dataset_paths:
-    ["/home/unai/Downloads/model_data/changing_phase/postprocessed_data.npz"]
+    ["main/mainSamplingData/postprocessed_data.npz"]
     # Paths to the sampled data, which should be either gathered in training, validation, and testing data or splitted later with split_percentages
  
 
-  steps: 3
-  batch_size: 256
+  steps: 1
+  batch_size: 32
   worker_no: 0
   pin_memory: False
 

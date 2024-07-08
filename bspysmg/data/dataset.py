@@ -7,7 +7,9 @@ import numpy as np
 from torch.utils.data import Dataset, DataLoader, random_split
 from brainspy.utils.pytorch import TorchUtils
 from typing import Tuple, List
-
+import matplotlib.pyplot as plt
+from torch.utils.data import Subset
+from bspysmg.data.rnndataset import RNNPreparedDataset
 
 class ModelDataset(Dataset):
     def __init__(self, filename: str, steps: int = 1) -> None:
@@ -365,6 +367,8 @@ def get_dataloaders(
     info_dict = None
     amplification = None
     dataset_names = ['train', 'validation', 'test']
+
+
     if len(configs['data']['dataset_paths']) > 1:
         for i in range(len(configs['data']['dataset_paths'])):
             if configs['data']['dataset_paths'][i] is not None:
@@ -386,40 +390,23 @@ def get_dataloaders(
                 amplification = TorchUtils.format(
                     info_dict["sampling_configs"]["driver"]["amplification"])
                 datasets.append(dataset)
+
     else:
         dataset = ModelDataset(configs['data']['dataset_paths'][0],
                                steps=configs['data']['steps'])
         info_dict = get_info_dict(configs, dataset.sampling_configs)
         amplification = TorchUtils.format(
             info_dict["sampling_configs"]["driver"]["amplification"])
+        datasets = split_dataset_seq(dataset, configs['data']['split_percentages'])
 
-        assert sum(
-            configs['data']
-            ['split_percentages']) == 1, "Split percentages should add to one"
-        assert len(configs['data']['split_percentages']) <= 3 and len(
-            configs['data']['split_percentages']
-        ) >= 1, "Split percentage list should only allow from one to three values. For training, validation datasets."
-        if len(configs['data']['split_percentages']) == 1:
-            datasets = [dataset, None]
-        else:
-            train_set_size = math.ceil(
-                configs['data']['split_percentages'][0] * len(dataset))
-            valid_set_size = math.floor(
-                configs['data']['split_percentages'][1] * len(dataset))
-
-            if len(configs['data']['split_percentages']) == 2:
-                datasets = list(
-                    random_split(dataset, [train_set_size, valid_set_size]))
-            else:
-                test_set_size = len(dataset) - train_set_size - valid_set_size
-                datasets = list(
-                    random_split(
-                        dataset,
-                        [train_set_size, valid_set_size, test_set_size]))
+     # Check if model is of type LSTM and prepare sequences if true
+    if info_dict['model_structure']['type'] == 'LSTM':
+        sequence_length = info_dict['model_structure']['sequence_length']
+        datasets = split_dataset_seq(RNNPreparedDataset(configs['data']['dataset_paths'][0],sequence_length=info_dict['model_structure']['sequence_length'] ,steps=configs['data']['steps']),configs['data']['split_percentages'])
 
     # Create dataloaders
     dataloaders = []
-    shuffle = [True, False, False]
+    shuffle = [False, False, False]
     for i in range(len(datasets)):
         if datasets[i] is not None and len(datasets[i]) != 0:
             dl = DataLoader(
@@ -434,3 +421,40 @@ def get_dataloaders(
         else:
             dataloaders.append(None)
     return dataloaders, amplification, info_dict
+
+
+def split_dataset(dataset, split_percentages):
+    assert sum(split_percentages) == 1, "Split percentages should add to one"
+    assert len(split_percentages) <= 3 and len(split_percentages) >= 1, "Split percentage list should only allow from one to three values. For training, validation datasets."
+    train_set_size = math.ceil(split_percentages[0] * len(dataset))
+    valid_set_size = math.floor(split_percentages[1] * len(dataset)) if len(split_percentages) > 1 else 0
+    test_set_size = len(dataset) - train_set_size - valid_set_size
+
+    if len(split_percentages) == 1:
+        return [dataset, None, None]
+    elif len(split_percentages) == 2:
+        return list(random_split(dataset, [train_set_size, valid_set_size]))
+    else:
+        return list(random_split(dataset, [train_set_size, valid_set_size, test_set_size]))
+    
+def split_dataset_seq(dataset, split_percentages):
+    assert sum(split_percentages) == 1, "Split percentages should add to one"
+    assert 1 <= len(split_percentages) <= 3, "Split percentage list should only allow from one to three values. For training, validation, and test datasets."
+    
+    total_len = len(dataset)
+    train_set_size = math.ceil(split_percentages[0] * total_len)
+    valid_set_size = math.floor(split_percentages[1] * total_len) if len(split_percentages) > 1 else 0
+    test_set_size = total_len - train_set_size - valid_set_size
+    
+    indices = list(range(total_len))
+    
+    train_indices = indices[:train_set_size]
+    valid_indices = indices[train_set_size:train_set_size + valid_set_size]
+    test_indices = indices[train_set_size + valid_set_size:]
+    
+    train_subset = Subset(dataset, train_indices)
+    valid_subset = Subset(dataset, valid_indices) if valid_set_size > 0 else None
+    test_subset = Subset(dataset, test_indices) if test_set_size > 0 else None
+    
+    return [train_subset, valid_subset, test_subset]
+    

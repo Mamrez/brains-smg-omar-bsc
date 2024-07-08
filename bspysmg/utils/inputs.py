@@ -251,7 +251,7 @@ def load_configs(config_dict: dict) -> dict:
     assert type(configs['input_frequency']) is list or type(configs['input_frequency']) is np.ndarray, "Input frequency for the generated wave should be a list containing irrational frequencies per activation electrode"
 
     # Decide which frequency calculation method to use based on the presence of 'base_input_frequency_multiplier'
-    if 'base_input_frequency_multiplier' in configs:
+    if 'type' in configs:
         configs['input_frequency_numpy'] = get_adjustable_frequency(configs)
     else:
         configs['input_frequency_numpy'] = get_frequency(configs)

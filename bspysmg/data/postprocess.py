@@ -4,7 +4,7 @@ File containing functions for postprocessing raw data gathered from the sampler 
 import os
 
 import numpy as np
-
+from numpy import array, hstack
 from brainspy.utils.io import load_configs
 from bspysmg.utils.plots import output_hist
 from typing import Tuple
@@ -555,6 +555,7 @@ def clip_data(inputs: np.array, outputs: np.array,
         raise TypeError(
             f"Clipping value not recognized! Must be list with lower and upper bound or float, was {type(clipping_value_range)}"
         )
+
 
 
 # def merge_postprocessed_data(file_names,
