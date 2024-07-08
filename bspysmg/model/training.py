@@ -18,8 +18,7 @@ from brainspy.utils.pytorch import TorchUtils
 from brainspy.utils.io import create_directory_timestamp
 from brainspy.processors.simulation.model import NeuralNetworkModel
 from bspysmg.data.dataset import get_dataloaders
-from bspysmg.utils.plots import plot_error_vs_output, plot_error_hist, plot_wave_prediction
-from bspysmg.model.lstm import LSTMModel
+from bspysmg.utils.plots import plot_error_vs_output, plot_error_hist
 from typing import Tuple, List
 
 
@@ -167,22 +166,17 @@ def generate_surrogate_model(
     )
 
     # Plot results
-    start_index = 0
     labels = ["TRAINING", "VALIDATION", "TEST"]
     for i in range(len(dataloaders)):
         if dataloaders[i] is not None:
-            io_file_path = 'main\mainSamplingData\IO.dat'
             loss = postprocess(
                 dataloaders[i],
                 model,
                 criterion,
                 amplification,
                 results_dir,
-                label=labels[i], 
-                io_file_path=io_file_path,
-                start_index=start_index
+                label=labels[i],
             )
-            start_index += len(dataloaders[i])
 
     plt.figure()
     plt.plot(TorchUtils.to_numpy(performances[0]))
@@ -415,10 +409,6 @@ def default_train_step(
     loop = tqdm(dataloader)
     for inputs, targets in loop:
         inputs, targets = to_device(inputs), to_device(targets)
-
-        # Ensure the target tensor has the same shape as the input tensor
-        targets = targets.view(-1, 1)
-
         optimizer.zero_grad()
 
         if hasattr(model, 'initialize_hidden_state'):
@@ -462,9 +452,6 @@ def default_val_step(model: torch.nn.Module,
         for inputs, targets in loop:
             inputs, targets = to_device(inputs), to_device(targets)
 
-            # Ensure the target tensor has the same shape as the input tensor
-            targets = targets.view(-1, 1)
-
             if hasattr(model, 'initialize_hidden_state'):
                 model.initialize_hidden_state(inputs.size(0))
 
@@ -478,7 +465,7 @@ def default_val_step(model: torch.nn.Module,
 
 def postprocess(dataloader: torch.utils.data.DataLoader,
                 model: torch.nn.Module, criterion: torch.nn.modules.loss._Loss,
-                amplification: float, results_dir: str, label: str, io_file_path: str = None, start_index: int = 0) -> float:
+                amplification: float, results_dir: str, label: str) -> float:
     """
     Plots error vs output and error histogram for given dataset and saves it to
     specified directory.
@@ -514,14 +501,6 @@ def postprocess(dataloader: torch.utils.data.DataLoader,
         model.eval()
         for inputs, targets in tqdm(dataloader):
             inputs, targets = to_device(inputs), to_device(targets)
-
-            # Ensure the target tensor has the same shape as the input tensor
-            targets = targets.view(-1, 1)
-
-            if isinstance(model, LSTMModel):
-                model.initialize_hidden_state(inputs.size(0))
-
-
             predictions = model(inputs)
             all_targets.append(amplification * targets)
             all_predictions.append(amplification * predictions)
@@ -539,9 +518,9 @@ def postprocess(dataloader: torch.utils.data.DataLoader,
 
     all_targets = TorchUtils.to_numpy(torch.cat(all_targets, dim=0))
     all_predictions = TorchUtils.to_numpy(torch.cat(all_predictions, dim=0))
-    
+
     error = all_targets - all_predictions
-    
+
     plot_error_vs_output(
         all_targets,
         error,
@@ -556,11 +535,6 @@ def postprocess(dataloader: torch.utils.data.DataLoader,
         results_dir,
         name=label + "_error",
     )
-
-     # Plot wave predictions if IO file path is provided
-    if io_file_path:
-        plot_wave_prediction(io_file_path, all_predictions, data_type=label, save_directory=results_dir,start_index=start_index, all_targets=all_targets)
-
     return torch.sqrt(running_loss)
 
 
