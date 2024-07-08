@@ -99,7 +99,6 @@ def generate_surrogate_model(
         )
 
     # Plot results
-    start_index = 0
     labels = ["TRAINING", "VALIDATION", "TEST"]
     for i in range(len(dataloaders)):
         if dataloaders[i] is not None:
@@ -114,7 +113,6 @@ def generate_surrogate_model(
                 io_file_path=io_file_path,
                 start_index=start_index
             )
-            start_index += len(dataloaders[i])
 
     if not issubclass(custom_model, XGBoostModel) and not issubclass(custom_model, ESNModel):
         plt.figure()
@@ -418,10 +416,6 @@ def default_train_step(
     loop = tqdm(dataloader)
     for i, (inputs, targets) in enumerate(loop):
         inputs, targets = to_device(inputs), to_device(targets)
-
-        # Ensure the target tensor has the same shape as the input tensor
-        targets = targets.view(-1, 1)
-
         optimizer.zero_grad()
 
         if hasattr(model, 'initialize_hidden_state'):

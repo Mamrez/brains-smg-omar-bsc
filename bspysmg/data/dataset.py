@@ -387,8 +387,6 @@ def get_dataloaders(
     info_dict = None
     amplification = None
     dataset_names = ['train', 'validation', 'test']
-
-
     if len(configs['data']['dataset_paths']) > 1:
         for i in range(len(configs['data']['dataset_paths'])):
             if configs['data']['dataset_paths'][i] is not None:
@@ -410,7 +408,6 @@ def get_dataloaders(
                 amplification = TorchUtils.format(
                     info_dict["sampling_configs"]["driver"]["amplification"])
                 datasets.append(dataset)
-
     else:
         dataset = ModelDataset(configs['data']['dataset_paths'][0],
                                steps=configs['data']['steps'])
@@ -480,7 +477,7 @@ def get_dataloaders(
 
     # Create dataloaders
     dataloaders = []
-    shuffle = [False, False, False]
+    shuffle = [True, False, False]
     for i in range(len(datasets)):
         if datasets[i] is not None and len(datasets[i]) != 0:
             dl = DataLoader(

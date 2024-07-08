@@ -1,7 +1,6 @@
 results_base_dir: tmp/output/conv_model # Path to the directory where output files are saved.
 
 model_structure: # Surrogate model Neural Network model structure;
-  type: "DNN"
   hidden_sizes:
     - 90
     - 90
